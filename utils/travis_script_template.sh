@@ -3,6 +3,9 @@ set -e
 # Build
 nikola build
 
+# Exit if building on a pull request
+if [[ $TRAVIS_PULL_REQUEST != 'false' ]] ; then exit 0; fi
+
 # Setup git for pushing from Travis
 ## Setup user details, so commits etc work.
 git config user.email $GIT_EMAIL

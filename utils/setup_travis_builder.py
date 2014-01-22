@@ -58,6 +58,7 @@ def create_travis_config(path, repo):
     config = {
         'env': {'global': {'secure': secure}},
         'install': 'pip install -e %s' % nikola_repo,
+        'branches': {'only': ['master']},
         'language': 'python',
         'python': ['2.7'],
         'script': SCRIPT

@@ -46,6 +46,8 @@ def create_travis_config(path, repo):
 
     # FIXME: enable hook here!
     # '/hooks' doesn't work as expected?
+    print('NOTE: you need to manually enable GitHub hook for %s' % repo)
+    print('Go to: https://travis-ci.org/profile')
 
     data = 'GH_TOKEN=%s GIT_NAME=%s GIT_EMAIL=%s' % (
         get_gh_auth_token().encode(), 'Travis CI', 'testing@travis-ci.org'

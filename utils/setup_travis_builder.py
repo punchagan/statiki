@@ -3,6 +3,9 @@
 This script adds and/or tweaks a .travis.yml file and an additional script
 to deploy using travis-ci to gh-pages branch on GitHub.
 
+Usage:
+    %s <repo-name> <path-to-dir>
+
 """
 
 # Standard library.
@@ -85,19 +88,6 @@ def create_script_file(path, repo):
     print('%s created. Add and commit to the git repo.' % script)
 
 
-def get_arg_parser():
-    """ Create an argument parser using docopt. """
-
-    from docopt import docopt
-
-    filename = basename(__file__)
-    usage = """Usage:
-    %s <repo-name> <path-to-dir>
-    """ % filename
-
-    return docopt(usage)
-
-
 def get_encrypted_text(repo_name, data):
     """ Return encrypted text for the data. """
 
@@ -145,7 +135,8 @@ def get_travis_public_key(repo):
 def main():
     """ Main entry point. """
 
-    args = get_arg_parser()
+    from docopt import docopt
+    args = docopt(__doc__ % basename(__file__))
     repo = args['<repo-name>']
     path = os.path.abspath(args['<path-to-dir>'])
 

@@ -53,3 +53,5 @@ The name statiki is combination of static (from static-sites) and iki
 - Add links to Travis-ci docs atleast for skip-ci stuff.
 - http://about.travis-ci.org/docs/user/deployment/custom/
 - http://awestruct.org/auto-deploy-to-github-pages/
+- FUTURE_IS_NOW mess-ups. Dates and timezone issues
+- Add a build status on the README!

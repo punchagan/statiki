@@ -44,13 +44,10 @@ def create_travis_config(path, repo):
         print('%s already exists. Nothing to do.' % travis_yml)
         return
 
-    # FIXME: enable hook here!
-    # '/hooks' doesn't work as expected?
-    print('NOTE: you need to manually enable GitHub hook for %s' % repo)
-    print('Go to: https://travis-ci.org/profile')
-
+    gh_token = get_gh_auth_token().encode()
+    enable_ci_for_repo(repo, gh_token)
     data = 'GH_TOKEN=%s GIT_NAME=%s GIT_EMAIL=%s' % (
-        get_gh_auth_token().encode(), 'Travis CI', 'testing@travis-ci.org'
+        gh_token, 'Travis CI', 'testing@travis-ci.org'
     )
     secure = get_encrypted_text(repo, data)
     nikola_repo = 'git+https://github.com/getnikola/nikola.git#egg=nikola'
@@ -91,6 +88,21 @@ def create_script_file(path, repo):
     print('%s created. Add and commit to the git repo.' % script)
 
 
+def enable_ci_for_repo(repo, gh_token):
+    """ Enable the travis hook for the given repo. """
+
+    repo_id = get_repo_id(repo)
+    access_token = get_travis_access_token(gh_token)
+    payload = json.dumps(dict(hook=dict(active=True, id=repo_id)))
+    headers = {
+        'Authorization': 'token %s' % access_token,
+        'Content-Type': 'application/json; charset=UTF-8'
+    }
+    url = 'https://api.travis-ci.org/hooks/%s' % repo_id
+    requests.put(url, data=payload,  headers=headers)
+    print('Enabled GitHub/Travis hook for %s' % repo)
+
+
 def get_encrypted_text(repo_name, data):
     """ Return encrypted text for the data. """
 
@@ -106,7 +118,7 @@ def get_encrypted_text(repo_name, data):
     return secure
 
 
-def get_gh_auth_token():
+def get_gh_auth_token(note='TravisCI deployment'):
     """ Get a token from GitHub to use for pushing from Travis. """
 
     from getpass import getpass
@@ -117,13 +129,29 @@ def get_gh_auth_token():
     url = 'https://api.github.com/authorizations'
     data = {
         'scopes': ['public_repo'],
-        'note': 'TravisCI deployment'
+        'note': note
     }
     response = requests.post(
         url, data=json.dumps(data), auth=(username, password)
     )
 
     return response.json()['token']
+
+
+def get_repo_id(repo):
+    """ Get the id for a repo. """
+
+    url = 'https://api.travis-ci.org/repos/%s' % repo
+
+    return requests.get(url).json()['id']
+
+
+def get_travis_access_token(gh_token):
+
+    url = 'https://api.travis-ci.org/auth/github'
+    data = {'github_token': gh_token}
+
+    return requests.post(url, data=data).json()['access_token']
 
 
 def get_travis_public_key(repo):

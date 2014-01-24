@@ -6,15 +6,24 @@ to deploy using travis-ci to gh-pages branch on GitHub.
 Usage:
     %s <repo-name> [<path-to-dir>]
 
+Requires:
+  - requests
+  - pyyaml
+  - rsa
+
 """
 
 # Standard library.
+import base64
 import json
 import os
 from os.path import basename, dirname, exists, join
+import re
 
 # 3rd party library.
 import requests
+import rsa
+import yaml
 
 SCRIPT = './travis_build_n_deploy.sh'
 
@@ -35,8 +44,6 @@ def add_nojekyll(path):
 
 def create_travis_config(path, repo):
     """ Add .travis.yml. """
-
-    import yaml
 
     travis_yml = join(path, '.travis.yml')
 
@@ -105,10 +112,6 @@ def enable_ci_for_repo(repo, gh_token):
 
 def get_encrypted_text(repo_name, data):
     """ Return encrypted text for the data. """
-
-    import rsa
-    import re
-    import base64
 
     public_key = get_travis_public_key(repo_name)
     key = rsa.PublicKey.load_pkcs1_openssl_pem(public_key)

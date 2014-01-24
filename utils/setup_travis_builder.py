@@ -7,8 +7,9 @@ Usage:
     %s <repo-name> [<path-to-dir>]
 
 Requires:
-  - requests
+  - docopt
   - pyyaml
+  - requests
   - rsa
 
 """

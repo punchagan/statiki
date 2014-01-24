@@ -4,7 +4,7 @@ This script adds and/or tweaks a .travis.yml file and an additional script
 to deploy using travis-ci to gh-pages branch on GitHub.
 
 Usage:
-    %s <repo-name> <path-to-dir>
+    %s <repo-name> [<path-to-dir>]
 
 """
 
@@ -169,7 +169,7 @@ def main():
     from docopt import docopt
     args = docopt(__doc__ % basename(__file__))
     repo = args['<repo-name>']
-    path = os.path.abspath(args['<path-to-dir>'])
+    path = os.path.abspath(args['<path-to-dir>'] or '.')
 
     add_nojekyll(path)
     create_travis_config(path, repo)

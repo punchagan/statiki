@@ -125,27 +125,31 @@ def logout():
 @app.route('/manage')
 @login_required
 def manage():
-    repo    = request.args.get('repo', None)
-    repo_id = get_repo_id(repo)
+    repo     = request.args.get('repo', None)
+    repo_id  = get_repo_id(repo)
+    gh_token = current_user.access_token
+
+    if repo_id is None and is_valid_repo(repo):
+        repo_id, message = sync_and_get_repo_id(repo, gh_token)
 
     if repo is None:
         message = 'Need a valid repository name'
 
-    elif not is_travis_user(current_user.access_token):
+    elif not is_travis_user(gh_token):
         message = ('You do not have a travis account. '
                    'Please <a href="https://travis-ci.org/profile" '
                    'target="_blank">signup</a>')
 
+    elif repo_id is None and not is_valid_repo(repo):
+        message = 'No such repository exists!'
+
     elif repo_id is None:
-        if is_valid_repo(repo):
-            # fixme: can we try to sync?
-            message = ('Repo could not be found.  '
-                       'If this is "your" repo, please run a sync')
-        else:
-            message = 'No such repository exists!'
+        message = (
+            'Repo could not be found.  Run a sync, manually?'
+        )
 
     else:
-        enabled = enable_ci_for_repo(repo_id, current_user.access_token)
+        enabled = enable_ci_for_repo(repo_id, gh_token)
         if enabled:
             message = 'Successfully enabled publishing for %s' % repo
         else:
@@ -154,7 +158,6 @@ def manage():
                 'Do you have the required permissions?' % repo
             )
 
-    #access_token = current_user.access_token
     return message
 
 
@@ -227,6 +230,68 @@ def is_valid_repo(repo):
     response = requests.get('https://github.com/%s' % repo)
     return response.status_code == 200
 
+
+def sync_and_get_repo_id(repo, gh_token):
+    """ Sync repositories of the user from GitHub and try to get repo id. """
+
+    synced, message = sync_travis_with_github(gh_token)
+
+    if synced:
+        repo_id = get_repo_id(repo)
+
+    else:
+        repo_id = None
+
+    return repo_id, message
+
+
+def sync_travis_with_github(gh_token):
+    """ Sync the repositories of the user from GitHub. """
+
+    token    = get_travis_access_token(gh_token)
+    headers  = {
+        'Authorization': 'token %s' % token,
+        'Content-Type': 'application/json; charset=UTF-8'
+    }
+    response = requests.post(
+        'http://api.travis-ci.org/users/sync', headers=headers
+    )
+
+    if response.status_code == 200 and response.json()['result']:
+        # fixme: this is ugly. should we make this async?
+        synced = wait_until_sync_finishes(headers)
+        if synced:
+            message = 'Successfully synced.'
+        else:
+            message = 'Sync failed, abruptly.'
+    else:
+        synced = False
+        message = 'Sync could not be started.'
+
+    return synced, message
+
+
+def wait_until_sync_finishes(headers):
+    """ Wait until a sync finishes. """
+
+    count = 0
+
+    while count < 10:
+        count += 1
+        response = requests.get(
+            'http://api.travis-ci.org/users/', headers=headers
+        )
+
+        if response.status_code != 200:
+            status = False
+            break
+        elif response.json()['is_syncing']:
+            status = False
+        else:
+            status = True
+            break
+
+    return status
 
 #### Standalone ###############################################################
 

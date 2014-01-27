@@ -110,7 +110,48 @@ class StatikiTestCase(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn('No such repository', response.data)
 
-    def test_should_inform_new_repository(self):
+    def test_should_inform_new_repository_sync_fails(self):
+        # Given
+        sync = Response()
+        sync._content = json.dumps(dict(result=True))
+        sync.status_code = 200
+
+        user = Response()
+        user._content = json.dumps(dict(is_syncing=True))
+        user.status_code = 200
+
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', Mock(return_value=True)):
+                with patch('requests.post', Mock(return_value=sync)):
+                    with patch('requests.get', Mock(return_value=user)):
+                        response = self.app.get('/manage?repo=baali/svms')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('run a sync', response.data.lower())
+
+    def test_should_inform_new_repository_sync_succeeds(self):
+        # Given
+        sync = Response()
+        sync._content = json.dumps(dict(result=True))
+        sync.status_code = 200
+
+        user = Response()
+        user._content = json.dumps(dict(is_syncing=False, synced_at='xxx'))
+        user.status_code = 200
+
+        with self.logged_in_as_fred():
+            with patch('requests.post', Mock(return_value=sync)):
+                with patch('requests.get', Mock(return_value=user)):
+
+                    # When
+                    response = self.app.get('/manage?repo=baali/svms')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('run a sync', response.data.lower())
+
+    def test_should_inform_new_repository_sync_cannot_start(self):
         # Given
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', Mock(return_value=True)):
@@ -120,7 +161,26 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('please run a sync', response.data.lower())
+        self.assertIn('run a sync', response.data.lower())
+
+    def test_should_inform_new_repository_post_sync_fails(self):
+        # Given
+        sync = Response()
+        sync._content = json.dumps(dict(result=True))
+        sync.status_code = 200
+
+        user = Response()
+        user._content = json.dumps(dict(is_syncing=False))
+        user.status_code = 200
+
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', Mock(return_value=True)):
+                with patch('requests.post', Mock(return_value=sync)):
+                    response = self.app.get('/manage?repo=baali/svms')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('run a sync', response.data.lower())
 
     def test_should_enable_publishing(self):
         # Given

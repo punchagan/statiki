@@ -2,7 +2,10 @@
 
 # 3rd party library.
 from flask import flash, Flask, redirect, render_template, request, url_for
-from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
+from flask_login import (
+    LoginManager, login_user, login_required, logout_user, UserMixin,
+    current_user
+)
 from flask.ext.sqlalchemy import SQLAlchemy
 from rauth.service import OAuth2Service
 

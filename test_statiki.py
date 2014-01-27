@@ -47,7 +47,9 @@ class StatikiTestCase(unittest.TestCase):
         response._content               = json.dumps(
             dict(id=12345, login='fred', name='Fred')
         )
-        data                            = {'user': response}
+        data                            = mock.Mock()
+        data.get                        = mock.Mock(return_value=response)
+        data.access_token               = 'foo bar baz'
         statiki.github.get_auth_session = mock.Mock(return_value=data)
 
         # When

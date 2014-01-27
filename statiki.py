@@ -3,7 +3,7 @@
 # Standard library.
 import base64
 import json
-from os.path import dirname, join
+from os.path import abspath, dirname, exists, join
 import re
 import yaml
 
@@ -20,11 +20,16 @@ import rsa
 
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 SCRIPT = 'travis_build_n_deploy.sh'
+HERE = dirname(abspath(__file__))
 
 
 # Flask setup
 app = Flask(__name__)
-app.config.from_pyfile('settings.py')
+if exists(join(HERE, 'settings.py')):
+    path = join(HERE, 'settings.py')
+else:
+    path = join(HERE, 'sample-settings.py')
+app.config.from_pyfile(path)
 db = SQLAlchemy(app)
 
 # Login related

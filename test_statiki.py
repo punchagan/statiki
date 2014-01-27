@@ -60,6 +60,19 @@ class StatikiTestCase(unittest.TestCase):
         self.assertEqual(302, response.status_code)
         self.assertIn('<a href="/">/</a>', response.data)
         self.assertIn('Logged in as Fred', next_response.data)
+        self.assertIn('Logout', next_response.data)
+
+    def test_logout_should_redirect_to_index(self):
+        # Given
+        self.test_should_return_to_login_on_authorized()
+
+        # When
+        response = self.app.get('/logout')
+        next_response = self.app.get()
+
+        # Then
+        self.assertEqual(302, response.status_code)
+        self.assertIn('GitHub Login', next_response.data)
 
 
 if __name__ == '__main__':

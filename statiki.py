@@ -3,6 +3,7 @@
 # Standard library.
 import base64
 import json
+from os.path import dirname, join
 import re
 import yaml
 
@@ -211,12 +212,12 @@ def create_travis_files(repo, gh_token):
     )
 
     # Create travis script file
-    #content = get_travis_config_contents(repo)
-    #name    = '.travis.yml'
-    #created.append(
-    #    commit_to_github(name, content, repo, gh_token)
-    #    if not github_path_exists(repo, name) else False
-    #)
+    content = get_travis_script_file_contents(repo)
+    name    = SCRIPT
+    created.append(
+        commit_to_github(name, content, repo, gh_token)
+        if not github_path_exists(repo, name) else False
+    )
 
     return all(created)
 
@@ -290,11 +291,21 @@ def get_travis_config_contents(repo, gh_token):
         'branches': {'only': ['master']},
         'language': 'python',
         'python': ['2.7'],
-        'script': SCRIPT,
+        'script': 'bash %s' % SCRIPT,
         'virtualenv': {'system_site_packages': True},
     }
 
     return yaml.dump(config)
+
+
+def get_travis_script_file_contents(repo):
+    """ Get the contents of the script file to be run on travis. """
+
+    template = join(dirname(__file__), 'utils', 'travis_script_template.sh')
+    with open(template) as f:
+        contents = f.read()
+
+    return contents % {'REPO': repo}
 
 
 def get_travis_public_key(repo):

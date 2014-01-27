@@ -19,7 +19,7 @@ import requests
 import rsa
 
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
-SCRIPT = './travis_build_n_deploy.sh'
+SCRIPT = 'travis_build_n_deploy.sh'
 
 
 # Flask setup
@@ -190,7 +190,7 @@ def commit_to_github(path, content, repo, gh_token):
     payload = {
         'path': path,
         'message': 'Adding %s (from statiki).' % path,
-        'content': base64.encodestring(content),
+        'content': base64.standard_b64encode(content),
     }
 
     response = requests.put(url, data=json.dumps(payload), headers=headers)

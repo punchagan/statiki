@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/punchagan/statiki.png?branch=master)](https://travis-ci.org/punchagan/statiki)
+
+
 statiki
 =======
 

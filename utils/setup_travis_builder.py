@@ -58,15 +58,16 @@ def create_travis_config(path, repo):
         gh_token, 'Travis CI', 'testing@travis-ci.org'
     )
     secure = get_encrypted_text(repo, data)
-    nikola_repo = 'git+https://github.com/getnikola/nikola.git#egg=nikola'
 
     config = {
         'env': {'global': {'secure': secure}},
-        'install': 'pip install -e %s' % nikola_repo,
+        'before_install': 'sudo apt-get install -qq python-lxml',
+        'install': 'pip install nikola',
         'branches': {'only': ['master']},
         'language': 'python',
         'python': ['2.7'],
-        'script': SCRIPT
+        'script': SCRIPT,
+        'virtualenv': {'system_site_packages': True},
     }
 
     with open(travis_yml, 'w') as f:

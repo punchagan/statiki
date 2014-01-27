@@ -2,6 +2,7 @@
 
 # 3rd party library.
 from flask import flash, Flask, redirect, render_template, request, url_for
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
 from flask.ext.sqlalchemy import SQLAlchemy
 from rauth.service import OAuth2Service
 
@@ -11,6 +12,10 @@ AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 app = Flask(__name__)
 app.config.from_pyfile('settings.py')
 db = SQLAlchemy(app)
+
+# Login related
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 # rauth OAuth 2.0 service wrapper
 github = OAuth2Service(
@@ -25,7 +30,7 @@ github = OAuth2Service(
 
 #### models ###################################################################
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True)
     gh_id = db.Column(db.String(120))
@@ -47,12 +52,21 @@ class User(db.Model):
             db.session.commit()
         return user
 
+    @staticmethod
+    def get(user_id):
+        return User.query.filter_by(id=user_id).first()
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
+
 
 #### views ####################################################################
 
 @app.route('/')
 def index():
-    return render_template('login.html')
+    return render_template('login.html', user=current_user)
 
 
 @app.route('/authorized')
@@ -73,6 +87,7 @@ def authorized():
 
     user_obj = User.get_or_create(user['login'], user['id'])
     user_obj.access_token = session.access_token
+    login_user(user_obj)
 
     flash('Logged in as ' + user.get('name', user['login']))
     return redirect(url_for('index'))
@@ -87,6 +102,13 @@ def login():
     }
 
     return redirect(github.get_authorize_url(**params))
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 #### Standalone ###############################################################
 

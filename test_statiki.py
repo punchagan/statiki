@@ -1,9 +1,13 @@
+from contextlib import contextmanager
 import unittest
 import json
+import tempfile
+import os
 
+from mock import Mock, patch
 from rauth.service import OAuth2Service
 from requests import Response
-import mock
+
 
 import statiki
 
@@ -11,8 +15,16 @@ import statiki
 class StatikiTestCase(unittest.TestCase):
 
     def setUp(self):
+        self.db_path = tempfile.mktemp(suffix='.db')
+        statiki.app.config['SQLALCHEMY_DATABASE_URI'] = (
+            'sqlite:///%s' % self.db_path
+        )
         statiki.app.config['TESTING'] = True
+        statiki.db.create_all()
         self.app = statiki.app.test_client()
+
+    def tearDown(self):
+        os.unlink(self.db_path)
 
     def test_index(self):
         # When
@@ -42,19 +54,9 @@ class StatikiTestCase(unittest.TestCase):
 
     def test_should_return_to_login_on_authorized(self):
         # Given
-        statiki.github                  = mock.Mock(spec=OAuth2Service)
-        response                        = Response()
-        response._content               = json.dumps(
-            dict(id=12345, login='fred', name='Fred')
-        )
-        data                            = mock.Mock()
-        data.get                        = mock.Mock(return_value=response)
-        data.access_token               = 'foo bar baz'
-        statiki.github.get_auth_session = mock.Mock(return_value=data)
-
-        # When
-        response = self.app.get('/authorized?code="bazooka"')
-        next_response = self.app.get()
+        with self.logged_in_as_fred() as response:
+            # When
+            next_response = self.app.get()
 
         # Then
         self.assertEqual(302, response.status_code)
@@ -64,15 +66,120 @@ class StatikiTestCase(unittest.TestCase):
 
     def test_logout_should_redirect_to_index(self):
         # Given
-        self.test_should_return_to_login_on_authorized()
+        with self.logged_in_as_fred():
 
-        # When
-        response = self.app.get('/logout')
-        next_response = self.app.get()
+            # When
+            response = self.app.get('/logout')
+            next_response = self.app.get()
 
         # Then
         self.assertEqual(302, response.status_code)
         self.assertIn('GitHub Login', next_response.data)
+
+    def test_should_ask_for_repo_name(self):
+        # Given
+        with self.logged_in_as_fred():
+
+            # When
+            response = self.app.get('/manage')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('Need a valid repository name', response.data)
+
+    def test_should_show_travis_signup(self):
+        # Given
+        with self.logged_in_as_fred():
+
+            # When
+            response = self.app.get('/manage?repo=punchagan/statiki')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('You do not have a travis account', response.data)
+
+    def test_should_inform_invalid_repository(self):
+        # Given
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', Mock(return_value=True)):
+
+                # When
+                response = self.app.get('/manage?repo=foobar/foobarbaz')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('No such repository', response.data)
+
+    def test_should_inform_new_repository(self):
+        # Given
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', Mock(return_value=True)):
+
+                # When
+                response = self.app.get('/manage?repo=baali/svms')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('please run a sync', response.data.lower())
+
+    def test_should_enable_publishing(self):
+        # Given
+        return_true = Mock(return_value=True)
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', return_true):
+                with patch('statiki.enable_ci_for_repo', return_true):
+                    # When
+                    response = self.app.get('/manage?repo=punchagan/statiki')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('success', response.data.lower())
+
+    def test_should_not_enable_publishing_without_travis_token(self):
+        # Given
+        return_true = Mock(return_value=True)
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', return_true):
+                # When
+                response = self.app.get('/manage?repo=punchagan/statiki')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('failed to enable publishing', response.data.lower())
+
+    def test_should_not_enable_publishing_unauthorized(self):
+        # Given
+        return_true = Mock(return_value=True)
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', return_true):
+                with patch('statiki.get_travis_access_token', return_true):
+                    # When
+                    response = self.app.get('/manage?repo=punchagan/statiki')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('failed to enable publishing', response.data.lower())
+
+    #### Private protocol #####################################################
+
+    @contextmanager
+    def logged_in_as_fred(self):
+        """ A context manager to do stuff, while logged in as fred. """
+
+        response           = Response()
+        response._content  = json.dumps(
+            dict(id=12345, login='fred', name='Fred')
+        )
+        data               = Mock()
+        data.get           = Mock(return_value=response)
+        data.access_token  = 'foo bar baz'
+
+        with patch('statiki.github', Mock(spec=OAuth2Service)) as gh:
+            gh.get_auth_session = Mock(return_value=data)
+
+            yield self.app.get('/authorized?code="bazooka"')
+
+        self.app.get('/logout')
 
 
 if __name__ == '__main__':

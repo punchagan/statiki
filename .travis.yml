@@ -1,10 +1,4 @@
-before_install: sudo apt-get install -qq python-lxml
-branches:
-  only: [master]
-env:
-  global: {secure: WtQO4ijsypwD9hrhlYqQFT80+QjDQC4r/GKBS/lT2QCE3Qd/SToIQNIwr8HTtfbAY5/VI9/f3uqX1d7f//OH1H6b5ynOuOl8Yj1BZUMF8eyrN3kMuqllhyOSZmyE1Xf5xVksobTsBnG2/UH2FNMre5BcWyHzO9uTFk6WuqxhzJU=}
-install: pip install nikola
 language: python
+install: pip install -r requirements-test.txt
 python: ['2.7']
-script: bash ./travis_build_n_deploy.sh
-virtualenv: {system_site_packages: true}
+script: nosetests --with-coverage --cover-package=statiki

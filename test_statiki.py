@@ -188,8 +188,9 @@ class StatikiTestCase(unittest.TestCase):
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', return_true):
                 with patch('statiki.enable_ci_for_repo', return_true):
-                    # When
-                    response = self.app.get('/manage?repo=punchagan/statiki')
+                    with patch('statiki.create_travis_files', return_true):
+                        # When
+                        response = self.app.get('/manage?repo=punchagan/statiki')
 
         # Then
         self.assertEqual(200, response.status_code)
@@ -219,6 +220,32 @@ class StatikiTestCase(unittest.TestCase):
         # Then
         self.assertEqual(200, response.status_code)
         self.assertIn('failed to enable publishing', response.data.lower())
+
+    def test_should_create_travis_files_when_non_existent(self):
+        # Given
+        return_true = Mock(return_value=True)
+        return_false = Mock(return_value=False)
+
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', return_true):
+                with patch('statiki.enable_ci_for_repo', return_true):
+                    with patch('statiki.github_path_exists', return_false):
+                        # When
+                        response = self.app.get(
+                            '/manage?repo=punchagan/experiri'
+                        )
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertIn('success', response.data.lower())
+
+    def test_github_path_exists(self):
+        # Given
+        repo = 'punchagan/experiri'
+        path = 'README.org'
+
+        # When/Then
+        self.assertTrue(statiki.github_path_exists(repo, path))
 
     #### Private protocol #####################################################
 

@@ -1,7 +1,10 @@
 """ A web app to automate build and deployment of static sites on GitHub. """
 
 # Standard library.
+import base64
 import json
+import re
+import yaml
 
 # 3rd party library.
 from flask import flash, Flask, redirect, render_template, request, url_for
@@ -9,11 +12,14 @@ from flask_login import (
     LoginManager, login_user, login_required, logout_user, UserMixin,
     current_user
 )
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from rauth.service import OAuth2Service
 import requests
+import rsa
 
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
+SCRIPT = './travis_build_n_deploy.sh'
+
 
 # Flask setup
 app = Flask(__name__)
@@ -151,7 +157,13 @@ def manage():
     else:
         enabled = enable_ci_for_repo(repo_id, gh_token)
         if enabled:
-            message = 'Successfully enabled publishing for %s' % repo
+            created = create_travis_files(repo, gh_token)
+            if created:
+                message = ('Successfully enabled publishing and '
+                           'added .travis.yml for %s' % repo)
+            else:
+                message = ('Successfully enabled travis hooks, but '
+                           'could not add .travis.yml for %s' % repo)
         else:
             message = (
                 'Failed to enable publishing for %s.  '
@@ -162,6 +174,52 @@ def manage():
 
 
 #### Helper functions #########################################################
+
+def commit_to_github(path, content, repo, gh_token):
+    """ Commit the given content to the given path in a repository. """
+
+    url = 'repos/%s/contents/%s' % (repo, path)
+    url = 'https://api.github.com/' + url
+
+    headers = {
+        'Authorization': 'token %s' % gh_token,
+        'Content-Type': 'application/json'
+    }
+
+    payload = {
+        'path': path,
+        'message': 'Adding %s (from statiki).' % path,
+        'content': base64.encodestring(content),
+    }
+
+    response = requests.put(url, data=json.dumps(payload), headers=headers)
+
+    return response.status_code == 201
+
+
+def create_travis_files(repo, gh_token):
+    """ Create the files required for Travis CI hooks to work. """
+
+    created = []
+
+    # Create .travis.yml
+    content = get_travis_config_contents(repo, gh_token)
+    name    = '.travis.yml'
+    created.append(
+        commit_to_github(name, content, repo, gh_token)
+        if not github_path_exists(repo, name) else False
+    )
+
+    # Create travis script file
+    #content = get_travis_config_contents(repo)
+    #name    = '.travis.yml'
+    #created.append(
+    #    commit_to_github(name, content, repo, gh_token)
+    #    if not github_path_exists(repo, name) else False
+    #)
+
+    return all(created)
+
 
 def enable_ci_for_repo(repo_id, gh_token):
     """ Enable the travis hook for the repo with the given id. """
@@ -185,6 +243,17 @@ def enable_ci_for_repo(repo_id, gh_token):
     return status
 
 
+def get_encrypted_text(repo_name, data):
+    """ Return encrypted text for the data. """
+
+    public_key = get_travis_public_key(repo_name)
+    key = rsa.PublicKey.load_pkcs1_openssl_pem(public_key)
+    secure = base64.encodestring(rsa.encrypt(data, key))
+    secure, _ = re.subn('\s+', '', secure)
+
+    return secure
+
+
 def get_repo_id(repo):
     """ Get the id for a repo. """
 
@@ -204,6 +273,46 @@ def get_travis_access_token(gh_token):
     data = {'github_token': gh_token}
 
     return requests.post(url, data=data).json().get('access_token')
+
+
+def get_travis_config_contents(repo, gh_token):
+    """ Get the contents to be dumped into the travis config. """
+
+    data = 'GH_TOKEN=%s GIT_NAME=%s GIT_EMAIL=%s' % (
+        gh_token.encode(), 'Travis CI', 'testing@travis-ci.org'
+    )
+    secure = get_encrypted_text(repo, data)
+
+    config = {
+        'env': {'global': {'secure': secure}},
+        'before_install': 'sudo apt-get install -qq python-lxml',
+        'install': 'pip install nikola',
+        'branches': {'only': ['master']},
+        'language': 'python',
+        'python': ['2.7'],
+        'script': SCRIPT,
+        'virtualenv': {'system_site_packages': True},
+    }
+
+    return yaml.dump(config)
+
+
+def get_travis_public_key(repo):
+    """ Get a public key for the repository from travis. """
+
+    url = 'https://api.travis-ci.org/repos/%s' % repo
+    response = requests.get(url)
+
+    return response.json()['public_key'].replace('RSA PUBLIC', 'PUBLIC')
+
+
+def github_path_exists(repo, path):
+    """ Return True if the given repository has the given path. """
+
+    url = 'repos/%s/contents/%s' % (repo, path)
+    url = 'https://api.github.com/' + url
+
+    return requests.get(url).status_code == 200
 
 
 def is_travis_user(gh_token):

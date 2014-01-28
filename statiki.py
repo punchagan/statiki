@@ -14,6 +14,7 @@ from flask_login import (
     current_user
 )
 from flask_sqlalchemy import SQLAlchemy
+from markdown import markdown
 from rauth.service import OAuth2Service
 import requests
 import rsa
@@ -356,6 +357,15 @@ def is_valid_repo(repo):
     return response.status_code == 200
 
 
+def render_readme():
+    """ Render the README file as a template file. """
+
+    with open(join(HERE, 'README.md')) as f:
+        with open(join(HERE, 'templates', 'readme.html'), 'w') as g:
+            readme = markdown(f.read())
+            g.write(readme)
+
+
 def sync_and_get_repo_id(repo, gh_token):
     """ Sync repositories of the user from GitHub and try to get repo id. """
 
@@ -422,6 +432,7 @@ def wait_until_sync_finishes(headers):
 
 if __name__ == '__main__':
     db.create_all()
+    render_readme()
     app.run(host='0.0.0.0')
 
 #### EOF ######################################################################

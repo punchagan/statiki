@@ -1,4 +1,6 @@
 <!doctype html>
+<html>
+<body style="width: 50%;margin: auto;">
 <title>GitHub Login</title>
 {% for message in get_flashed_messages() %}
 {{ message }}
@@ -17,3 +19,7 @@
       </form>
   </div>
 {% endif %}
+<h2>README</h2>
+{% include 'readme.html' %}
+</body>
+</html>

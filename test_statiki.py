@@ -21,6 +21,7 @@ class StatikiTestCase(unittest.TestCase):
         )
         statiki.app.config['TESTING'] = True
         statiki.db.create_all()
+        statiki.render_readme()
         self.app = statiki.app.test_client()
 
     def tearDown(self):

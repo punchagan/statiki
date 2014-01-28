@@ -58,6 +58,8 @@ in the repository, and enable the travis hooks for the repository.
 Note that this will only work if you have a travis-ci account.  `statiki` will
 prompt you to create one, if it couldn't find one.
 
+Test site runs [here](http://muse-amuse.in:5000)
+
 #### Notes & References ####
 
 - Remember to add a .nojekyll file.

@@ -1,13 +1,13 @@
 from contextlib import contextmanager
-import unittest
 import json
+from os.path import exists, join
+import shutil
 import tempfile
-import os
+import unittest
 
 from mock import Mock, patch
 from rauth.service import OAuth2Service
 from requests import Response
-
 
 import statiki
 
@@ -15,7 +15,8 @@ import statiki
 class StatikiTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.db_path = tempfile.mktemp(suffix='.db')
+        self.tempdir = tempfile.mkdtemp()
+        self.db_path = join(self.tempdir, 'test.db')
         statiki.app.config['SQLALCHEMY_DATABASE_URI'] = (
             'sqlite:///%s' % self.db_path
         )
@@ -25,7 +26,7 @@ class StatikiTestCase(unittest.TestCase):
         self.app = statiki.app.test_client()
 
     def tearDown(self):
-        os.unlink(self.db_path)
+        shutil.rmtree(self.tempdir)
 
     def test_index(self):
         # When

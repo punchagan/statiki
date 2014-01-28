@@ -249,6 +249,50 @@ class StatikiTestCase(unittest.TestCase):
         # When/Then
         self.assertTrue(statiki.github_path_exists(repo, path))
 
+    def test_should_create_empty_site(self):
+        # Given
+        path = join(self.tempdir, 'demo')
+        config = join(path, 'conf.py')
+        check_call_mock = Mock()
+
+        def check_call(args):
+            import os
+            path = args[-1]
+            os.makedirs(path)
+            with open(config, 'w'):
+                pass
+            check_call_mock(args)
+            return path
+
+        # When
+        with patch('subprocess.check_call', check_call):
+            new = statiki.create_demo_site(path)
+
+        # Then
+        self.assertEqual(new, path)
+        self.assertTrue(exists(config))
+        check_call_mock.called_with(['nikola', 'init', path])
+
+    def test_should_inform_when_command_missing(self):
+        # Given
+        path = join(self.tempdir, 'demo')
+        check_call_mock = Mock()
+
+        def check_call(args):
+            check_call_mock(args)
+            raise OSError('file not found')
+
+        # When
+        with patch('subprocess.check_call', check_call):
+            new = statiki.create_demo_site(path)
+
+        # Then
+        self.assertIsNone(new)
+        check_call_mock.called_with(['nikola', 'init', path])
+
+
+
+
     #### Private protocol #####################################################
 
     @contextmanager

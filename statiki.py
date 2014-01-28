@@ -23,7 +23,7 @@ AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 SCRIPT = 'travis_build_n_deploy.sh'
 HERE = dirname(abspath(__file__))
 SITE = 'Statiki'
-DESCRIPTION = ''
+DESCRIPTION = 'An easy-to-use service for deploying simple web-sites'
 
 
 # Flask setup

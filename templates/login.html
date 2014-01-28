@@ -9,4 +9,11 @@
 {% else %}
   <p>Welcome, {{ user.username }}</p>
   <a href ="{{ url_for('logout') }}">Logout</a>
+  <div>
+      <p>Enter the name of the repository you would like to manage.</p>
+      <form action="/manage" method="get">
+          Repository: <input type="text" name="repo" placeholder="punchagan/statiki"><br>
+          <input type="submit" value="Submit">
+      </form>
+  </div>
 {% endif %}

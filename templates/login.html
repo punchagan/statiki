@@ -5,12 +5,15 @@
 {% for message in get_flashed_messages() %}
 {{ message }}
 {% endfor %}
+<div class="login" style="margin-left: 45%;top: 0px;position: absolute;">
 {% if user.is_anonymous() %}
-   <h1>Login</h1>
    <a href ="{{ url_for('login') }}">Login with GitHub</a>
 {% else %}
   <p>Welcome, {{ user.username }}</p>
   <a href ="{{ url_for('logout') }}">Logout</a>
+{% endif %}
+</div>
+{% if not user.is_anonymous() %}
   <div>
       <p>Enter the name of the repository you would like to manage.</p>
       <form action="/manage" method="get">

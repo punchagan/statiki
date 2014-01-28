@@ -48,6 +48,15 @@ The name statiki is combination of static (from static-sites) and iki
 7. All future posts can be made using GitHub's UI, or something like
    prose.io or simply using git!.
 
+## Current Status ##
+
+Currently, `statiki` can only enable automatic publishing for existing Nikola
+sites on GitHub.  You can give statiki the name of a repository that you own,
+as `<owner>/<repo-name>` after logging in, it will create a `.travis.yml` file
+in the repository, and enable the travis hooks for the repository.
+
+Note that this will only work if you have a travis-ci account.  `statiki` will
+prompt you to create one, if it couldn't find one.
 
 #### Notes & References ####
 

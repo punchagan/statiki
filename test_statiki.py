@@ -33,7 +33,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('GitHub Login', response.data)
+        self.assertIn(statiki.DESCRIPTION, response.data)
 
     def test_login_should_redirect_to_authorize(self):
         # When
@@ -75,7 +75,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(302, response.status_code)
-        self.assertIn('GitHub Login', next_response.data)
+        self.assertIn(statiki.DESCRIPTION, next_response.data)
 
     def test_should_ask_for_repo_name(self):
         # Given

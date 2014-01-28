@@ -22,6 +22,8 @@ import rsa
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 SCRIPT = 'travis_build_n_deploy.sh'
 HERE = dirname(abspath(__file__))
+SITE = 'Statiki'
+DESCRIPTION = ''
 
 
 # Flask setup
@@ -90,7 +92,12 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
-    return render_template('login.html', user=current_user)
+    context = {
+        'user': current_user,
+        'SITE': SITE,
+        'DESCRIPTION': DESCRIPTION,
+    }
+    return render_template('index.html', **context)
 
 
 @app.route('/authorized')

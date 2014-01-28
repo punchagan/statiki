@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{{DESCRIPTION}}">
+<title>{{SITE}} &ndash; {{DESCRIPTION}}</title>
+<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.3.0/pure-min.css">
+<!--[if lte IE 8]>
+<link rel="stylesheet" href="/static/css/main-grid-old-ie.css">
+<![endif]-->
+<!--[if gt IE 8]><!-->
+<link rel="stylesheet" href="/static/css/main-grid.css">
+<!--<![endif]-->
+<!--[if lte IE 8]>
+<link rel="stylesheet" href="/static/css/layouts/marketing-old-ie.css">
+<![endif]-->
+<!--[if gt IE 8]><!-->
+<link rel="stylesheet" href="/static/css/layouts/marketing.css">
+<!--<![endif]-->
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+</head>
+<body>
+
+<div class="header">
+    <div class="home-menu pure-menu pure-menu-open pure-menu-horizontal pure-menu-fixed">
+        <a class="pure-menu-heading" href="">{{SITE}}</a>
+        <ul>
+            <li><a href="#">Home</a></li>
+            {% if user.is_anonymous() %}
+            <li><a href="{{ url_for('login') }}">Login with GitHub</a></li>
+            {% else %}
+            <li>Welcome, {{ user.username }}</li>
+            <li><a href ="{{ url_for('logout') }}">Logout</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
+<div class="splash-container">
+    <div class="splash">
+        <h1 class="splash-head">{{SITE}}</h1>
+        {% if user.is_anonymous() %}
+        <p class="splash-subhead">{{DESCRIPTION}} </p>
+        <p>
+            <a href="{{ url_for('login') }}" class="pure-button pure-button-primary">Get Started</a>
+        </p>
+        {% else %}
+        <div>
+            <form class="pure-form" action="/manage" method="GET">
+                <fieldset>
+                    <legend>Name of the repository to manage</legend>
+                    <input type="text" name="repo" placeholder="punchagan/statiki" required>
+                    <button type="submit" class="pure-button pure-button-primary">Manage!</button>
+                </fieldset>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: none;">
+    {% for message in get_flashed_messages() %}
+    {{ message }}
+    {% endfor %}
+</div>
+
+<div class="content-wrapper">
+    <div class="content">
+        <h2 class="content-head is-center">README</h2>
+        {% include 'readme.html' %}
+    </div>
+    <div class="footer l-box is-center">
+        Made with <3 by <a href="https://github.com/punchagan">punchagan</a>
+    </div>
+</div>
+
+</body>
+</html>

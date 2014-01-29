@@ -62,7 +62,7 @@ function git_create_gh_pages() {
 # Initialize site using nikola's sample site
 function initialize_site() {
 
-    nikola init .
+    nikola init . || test [ -f conf.py ]
     git_commit_all
     git_push_silent master
 

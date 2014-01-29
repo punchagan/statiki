@@ -54,15 +54,13 @@ label {
  */
 .pure-form label {
     margin: 1em 0 0;
-    font-weight: bold;
-    font-size: 100%;
+    font-size: 120%;
 }
 
 .pure-form input[type] {
     border: 2px solid #ddd;
     box-shadow: none;
     font-size: 120%;
-    width: 100%;
     margin-bottom: 1em;
 }
 
@@ -164,7 +162,6 @@ color: #333333;
     position: absolute;
     top: 100px; left: 0; bottom: 0; right: 0;
     text-align: center;
-    text-transform: uppercase;
 }
 
 /* This is the main heading that appears on the blue section */

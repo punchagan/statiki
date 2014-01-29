@@ -60,9 +60,12 @@
         <div>
             <form class="pure-form" action="/manage" method="GET">
                 <fieldset>
-                    <legend>Name of the repository to manage</legend>
-                    <input type="text" name="repo_name" placeholder="punchagan/statiki" required>
-                    <button type="submit" class="pure-button pure-button-primary">Manage!</button>
+                    <legend>Site to create and/or manage</legend>
+                    <div class="pure-u">
+                        <label for="repo_name">https://{{user.username}}.github.io/</label>
+                        <input type="text" name="repo_name" placeholder="statiki" required>
+                    </div>
+                    <button type="submit" class="pure-button pure-button-primary">Go!</button>
                 </fieldset>
             </form>
         </div>

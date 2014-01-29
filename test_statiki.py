@@ -291,7 +291,36 @@ class StatikiTestCase(unittest.TestCase):
         check_call_mock.called_with(['nikola', 'init', path])
 
 
+    def test_should_barf_when_creating_organization_repos(self):
+        # Given
+        repo = 'github/testing'
 
+        # When/Then
+        with self.assertRaises(NotImplementedError):
+            statiki.create_new_repository(repo, 'foo bar baz')
+
+
+    def test_should_barf_when_creating_duplicate_repo(self):
+        # Given
+        repo = 'punchagan/statiki'
+
+        # When/Then
+        with self.assertRaises(statiki.DuplicateRepoError):
+            statiki.create_new_repository(repo, 'foo bar baz')
+
+    def test_should_create_new_repository(self):
+        # Given
+        repo = 'foo/bar'
+        response = Response()
+        response.status_code = 201
+
+        # When
+        with self.logged_in_as_fred():
+            with patch('requests.post', Mock(return_value=response)):
+                created = statiki.create_new_repository(repo, 'foo bar baz')
+
+        # Then
+        self.assertTrue(created)
 
     #### Private protocol #####################################################
 

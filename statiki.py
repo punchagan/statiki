@@ -50,6 +50,12 @@ github = OAuth2Service(
 )
 
 
+#### exceptions ###############################################################
+
+class DuplicateRepoError(Exception):
+    """ Raised when trying to create a repository that already exists. """
+
+
 #### models ###################################################################
 
 class User(db.Model, UserMixin):
@@ -211,6 +217,44 @@ def commit_to_github(path, content, repo, gh_token):
     return response.status_code == 201
 
 
+def create_new_repository(repo, gh_token):
+    """ Create a new repository given the name and a token.
+
+    NOTE the token must have 'repo' scope, not just 'public_repo'.
+
+    """
+
+    user, user_type, name = get_user_and_repo(repo)
+
+    if user_type == 'Organization':
+        raise NotImplementedError('Organizations are not yet supported')
+
+    if is_valid_repo(repo):
+        raise DuplicateRepoError("Repository '%s' already exists!" % repo)
+
+    url = 'https://api.github.com/user/repos'
+
+    headers = {
+        'Authorization': 'token %s' % gh_token,
+        'Content-Type': 'application/json'
+    }
+
+    payload = {
+        'name': name,
+        'description': 'Website using Nikola, created using statiki',
+        # fixme: add 'homepage'
+        # 'homepage': 'https://github.com',
+        'private': False,
+        'has_issues': False,
+        'has_wiki': False,
+        'has_downloads': False,
+    }
+
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
+
+    return response.status_code == 201
+
+
 def create_template_site(path):
     """ Create a template site at the specified path. """
 
@@ -341,6 +385,21 @@ def get_travis_public_key(repo):
     response = requests.get(url)
 
     return response.json()['public_key'].replace('RSA PUBLIC', 'PUBLIC')
+
+
+def get_user_and_repo(repo):
+    """ Given <user>/<repo-name> return (username, user_type, repo).
+
+    user_type is one of User or Organization.
+
+    """
+
+    user, name = repo.split('/')
+    response = requests.get('https://api.github.com/users/%s' % user)
+
+    user_type = response.json()['type']
+
+    return user, user_type, name
 
 
 def github_path_exists(repo, path):

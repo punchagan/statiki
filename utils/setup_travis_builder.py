@@ -133,7 +133,7 @@ def get_gh_auth_token(note='TravisCI deployment'):
 
     url = 'https://api.github.com/authorizations'
     data = {
-        'scopes': ['public_repo'],
+        'scopes': ['repo'],
         'note': note
     }
     response = requests.post(

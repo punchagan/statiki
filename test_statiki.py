@@ -78,39 +78,66 @@ class StatikiTestCase(unittest.TestCase):
         self.assertEqual(302, response.status_code)
         self.assertIn(statiki.DESCRIPTION, next_response.data)
 
-    def test_should_ask_for_repo_name(self):
-        # Given
-        with self.logged_in_as_fred():
-
-            # When
-            response = self.app.get('/manage')
-
-        # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('Need a valid repository name', response.data)
-
     def test_should_show_travis_signup(self):
         # Given
         with self.logged_in_as_fred():
 
             # When
-            response = self.app.get('/manage?repo=punchagan/statiki')
+            response = self.app.get('/manage?repo_name=statiki')
+            next_response = self.app.get()
 
         # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('You do not have a travis account', response.data)
+        self.assertEqual(302, response.status_code)
+        self.assertIn('Travis-ci account', next_response.data)
 
-    def test_should_inform_invalid_repository(self):
+    def test_should_request_repo_name(self):
         # Given
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', Mock(return_value=True)):
 
                 # When
-                response = self.app.get('/manage?repo=foobar/foobarbaz')
+                response = self.app.get('/manage')
+                next_response = self.app.get()
 
         # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('No such repository', response.data)
+        self.assertEqual(302, response.status_code)
+        self.assertIn('Need a valid repository name', next_response.data)
+
+    def test_should_create_repo(self):
+        # Given
+        def create(*args, **kwargs):
+            raise RuntimeError(*args, **kwargs)
+
+        # When/Then
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', Mock(return_value=True)):
+                with patch('statiki.is_valid_repo', Mock(return_value=False)):
+                    with patch('statiki.create_new_repository', create):
+                        with self.assertRaises(RuntimeError) as e:
+                            self.app.get('/manage?repo_name=foo')
+
+        # Then
+        self.assertEquals(e.exception.args, ('punchagan/foo', 'foo bar baz'))
+
+    def test_should_create_and_manage_repo(self):
+        # Given
+        true = Mock(return_value=True)
+        files = Mock(return_value={'.travis.yml': True})
+
+        # When
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', true):
+                with patch('statiki.is_valid_repo', true):
+                    with patch('statiki.get_repo_id', true):
+                        with patch('statiki.enable_ci_for_repo', true):
+                            with patch('statiki.create_travis_files', files):
+                                response = self.app.get('/manage?repo_name=X')
+
+        next_response = self.app.get()
+
+        # Then
+        self.assertEqual(302, response.status_code)
+        self.assertIn('enabled for punchagan/x', next_response.data.lower())
 
     def test_should_inform_new_repository_sync_fails(self):
         # Given
@@ -122,15 +149,62 @@ class StatikiTestCase(unittest.TestCase):
         user._content = json.dumps(dict(is_syncing=True))
         user.status_code = 200
 
+        # When
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', Mock(return_value=True)):
                 with patch('requests.post', Mock(return_value=sync)):
                     with patch('requests.get', Mock(return_value=user)):
-                        response = self.app.get('/manage?repo=baali/svms')
+                        response = self.app.get('/manage?repo_name=svms')
+        next_response = self.app.get()
 
         # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('run a sync', response.data.lower())
+        self.assertEqual(302, response.status_code)
+        self.assertIn('run a sync', next_response.data.lower())
+
+    def test_should_inform_sync_fails_to_start(self):
+        # Given
+        sync = Response()
+        sync._content = json.dumps(dict(result=True))
+        sync.status_code = 404
+
+        user = Response()
+        user._content = json.dumps(dict(is_syncing=True))
+        user.status_code = 200
+
+        # When
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', Mock(return_value=True)):
+                with patch('requests.post', Mock(return_value=sync)):
+                    with patch('requests.get', Mock(return_value=user)):
+                        response = self.app.get('/manage?repo_name=svms')
+        next_response = self.app.get()
+
+        # Then
+        self.assertEqual(302, response.status_code)
+        self.assertIn('run a sync', next_response.data.lower())
+
+    def test_should_inform_sync_abort(self):
+        # Given
+        sync = Response()
+        sync._content = json.dumps(dict(result=True))
+        sync.status_code = 200
+
+        user = Response()
+        user._content = json.dumps(dict(is_syncing=True))
+        user.status_code = 404
+
+        # When
+        with self.logged_in_as_fred():
+            with patch('statiki.is_travis_user', Mock(return_value=True)):
+                with patch('statiki.is_valid_repo', Mock(return_value=True)):
+                    with patch('requests.post', Mock(return_value=sync)):
+                        with patch('requests.get', Mock(return_value=user)):
+                            response = self.app.get('/manage?repo_name=svms')
+        next_response = self.app.get()
+
+        # Then
+        self.assertEqual(302, response.status_code)
+        self.assertIn('run a sync', next_response.data.lower())
 
     def test_should_inform_new_repository_sync_succeeds(self):
         # Given
@@ -147,166 +221,58 @@ class StatikiTestCase(unittest.TestCase):
                 with patch('requests.get', Mock(return_value=user)):
 
                     # When
-                    response = self.app.get('/manage?repo=baali/svms')
+                    response = self.app.get('/manage?repo_name=svms')
+                    next_response = self.app.get()
 
         # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('run a sync', response.data.lower())
+        self.assertEqual(302, response.status_code)
+        self.assertIn('run a sync', next_response.data.lower())
 
-    def test_should_inform_new_repository_sync_cannot_start(self):
-        # Given
-        with self.logged_in_as_fred():
-            with patch('statiki.is_travis_user', Mock(return_value=True)):
-
-                # When
-                response = self.app.get('/manage?repo=baali/svms')
-
-        # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('run a sync', response.data.lower())
-
-    def test_should_inform_new_repository_post_sync_fails(self):
-        # Given
-        sync = Response()
-        sync._content = json.dumps(dict(result=True))
-        sync.status_code = 200
-
-        user = Response()
-        user._content = json.dumps(dict(is_syncing=False))
-        user.status_code = 200
-
-        with self.logged_in_as_fred():
-            with patch('statiki.is_travis_user', Mock(return_value=True)):
-                with patch('requests.post', Mock(return_value=sync)):
-                    response = self.app.get('/manage?repo=baali/svms')
-
-        # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('run a sync', response.data.lower())
-
-    def test_should_enable_publishing(self):
+    def test_should_not_enable_hook_unauthorized(self):
         # Given
         return_true = Mock(return_value=True)
-        with self.logged_in_as_fred():
-            with patch('statiki.is_travis_user', return_true):
-                with patch('statiki.enable_ci_for_repo', return_true):
-                    with patch('statiki.create_travis_files', return_true):
-                        # When
-                        response = self.app.get('/manage?repo=punchagan/statiki')
 
-        # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('success', response.data.lower())
-
-    def test_should_not_enable_publishing_without_travis_token(self):
-        # Given
-        return_true = Mock(return_value=True)
-        with self.logged_in_as_fred():
-            with patch('statiki.is_travis_user', return_true):
-                # When
-                response = self.app.get('/manage?repo=punchagan/statiki')
-
-        # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('failed to enable publishing', response.data.lower())
-
-    def test_should_not_enable_publishing_unauthorized(self):
-        # Given
-        return_true = Mock(return_value=True)
+        # When
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', return_true):
                 with patch('statiki.get_travis_access_token', return_true):
-                    # When
-                    response = self.app.get('/manage?repo=punchagan/statiki')
+                    with patch('statiki.get_repo_id', return_true):
+                        response = self.app.get('/manage?repo_name=statiki')
+
+        next_response = self.app.get()
 
         # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('failed to enable publishing', response.data.lower())
+        self.assertEqual(302, response.status_code)
+        self.assertIn(
+            'enabled for punchagan/statiki: false', next_response.data.lower()
+        )
 
-    def test_should_create_travis_files_when_non_existent(self):
+    def test_should_manage_existing_repo(self):
         # Given
         return_true = Mock(return_value=True)
         return_false = Mock(return_value=False)
 
+        # When
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', return_true):
-                with patch('statiki.enable_ci_for_repo', return_true):
-                    with patch('statiki.github_path_exists', return_false):
-                        # When
-                        response = self.app.get(
-                            '/manage?repo=punchagan/experiri'
-                        )
+                with patch('statiki.github_path_exists', return_false):
+                    response = self.app.get('/manage?repo_name=experiri')
+
+        next_response = self.app.get()
 
         # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn('success', response.data.lower())
+        self.assertEqual(302, response.status_code)
+        self.assertIn(
+            'enabled for punchagan/experiri', next_response.data.lower()
+        )
 
     def test_github_path_exists(self):
         # Given
-        repo = 'punchagan/experiri'
-        path = 'README.org'
+        repo = 'punchagan/statiki'
+        path = 'README.md'
 
         # When/Then
         self.assertTrue(statiki.github_path_exists(repo, path))
-
-    def test_should_create_template_site(self):
-        # Given
-        path = join(self.tempdir, 'demo')
-        config = join(path, 'conf.py')
-        check_call_mock = Mock()
-
-        def check_call(args):
-            import os
-            path = args[-1]
-            os.makedirs(path)
-            with open(config, 'w'):
-                pass
-            check_call_mock(args)
-            return path
-
-        # When
-        with patch('subprocess.check_call', check_call):
-            new = statiki.create_template_site(path)
-
-        # Then
-        self.assertEqual(new, path)
-        self.assertTrue(exists(config))
-        check_call_mock.called_with(['nikola', 'init', path])
-
-    def test_should_inform_when_command_missing(self):
-        # Given
-        path = join(self.tempdir, 'demo')
-        check_call_mock = Mock()
-
-        def check_call(args):
-            check_call_mock(args)
-            raise OSError('file not found')
-
-        # When
-        with patch('subprocess.check_call', check_call):
-            new = statiki.create_template_site(path)
-
-        # Then
-        self.assertIsNone(new)
-        check_call_mock.called_with(['nikola', 'init', path])
-
-
-    def test_should_barf_when_creating_organization_repos(self):
-        # Given
-        repo = 'github/testing'
-
-        # When/Then
-        with self.assertRaises(NotImplementedError):
-            statiki.create_new_repository(repo, 'foo bar baz')
-
-
-    def test_should_barf_when_creating_duplicate_repo(self):
-        # Given
-        repo = 'punchagan/statiki'
-
-        # When/Then
-        with self.assertRaises(statiki.DuplicateRepoError):
-            statiki.create_new_repository(repo, 'foo bar baz')
 
     def test_should_create_new_repository(self):
         # Given
@@ -330,7 +296,7 @@ class StatikiTestCase(unittest.TestCase):
 
         response           = Response()
         response._content  = json.dumps(
-            dict(id=12345, login='fred', name='Fred')
+            dict(id=12345, login='punchagan', name='Fred')
         )
         data               = Mock()
         data.get           = Mock(return_value=response)

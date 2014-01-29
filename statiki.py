@@ -2,13 +2,14 @@
 
 # Standard library.
 import base64
+from functools import wraps
 import json
 from os.path import abspath, dirname, exists, join
 import re
 import yaml
 
 # 3rd party library.
-from flask import flash, Flask, redirect, render_template, request, url_for
+from flask import flash, Flask, redirect, render_template, request, url_for, get_flashed_messages
 from flask_login import (
     LoginManager, login_user, login_required, logout_user, UserMixin,
     current_user
@@ -38,6 +39,7 @@ db = SQLAlchemy(app)
 # Login related
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 # rauth OAuth 2.0 service wrapper
 github = OAuth2Service(
@@ -50,10 +52,25 @@ github = OAuth2Service(
 )
 
 
-#### exceptions ###############################################################
+#### decorators ###############################################################
 
-class DuplicateRepoError(Exception):
-    """ Raised when trying to create a repository that already exists. """
+def travis_login_required(func):
+    """ Ensures that the view is visible only to a travis user.
+
+    NOTE: Always use along with the login_required decorator, and below it.
+
+    """
+
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if not is_travis_user(current_user.access_token):
+            flash(
+                'Please <a href="https://travis-ci.org/profile" target='
+                '"_blank">signup</a> for a Travis-ci account to proceed.'
+            )
+            return redirect(url_for('index'))
+        return func(*args, **kwargs)
+    return decorated_view
 
 
 #### models ###################################################################
@@ -150,47 +167,42 @@ def logout():
 
 @app.route('/manage')
 @login_required
+@travis_login_required
 def manage():
-    repo     = request.args.get('repo', None)
-    repo_id  = get_repo_id(repo)
-    gh_token = current_user.access_token
 
-    if repo_id is None and is_valid_repo(repo):
-        repo_id, message = sync_and_get_repo_id(repo, gh_token)
+    repo_name = request.args.get('repo_name', None)
+    full_name = '%s/%s' % (current_user.username, repo_name)
+    gh_token  = current_user.access_token
 
-    if repo is None:
-        message = 'Need a valid repository name'
+    if not repo_name:
+        flash('Need a valid repository name.')
+        return redirect(url_for('index'))
 
-    elif not is_travis_user(gh_token):
-        message = ('You do not have a travis account. '
-                   'Please <a href="https://travis-ci.org/profile" '
-                   'target="_blank">signup</a>')
+    # If repo does not exist, create it.
+    if not is_valid_repo(full_name):
+        create_new_repository(full_name, gh_token)
 
-    elif repo_id is None and not is_valid_repo(repo):
-        message = 'No such repository exists!'
+    # If repo not listed in travis, sync
+    repo_id = get_repo_id(full_name)
+    if repo_id is None:
+        repo_id = sync_and_get_repo_id(full_name, gh_token)
 
-    elif repo_id is None:
-        message = (
-            'Repo could not be found.  Run a sync, manually?'
+    if repo_id is None:
+        flash(
+            'Repo could not be found. Run a sync, <a href='
+            '"http://travis-ci.org/profile" target="_blank">manually?</a>'
         )
+        return redirect(url_for('index'))
 
-    else:
-        enabled = enable_ci_for_repo(repo_id, gh_token)
-        if enabled:
-            created = create_travis_files(repo, gh_token)
-            if created:
-                message = ('Successfully enabled publishing and '
-                           'added .travis.yml for %s' % repo)
-            else:
-                message = ('Successfully enabled travis hooks, but '
-                           'could not add .travis.yml for %s' % repo)
-        else:
-            message = (
-                'Failed to enable publishing for %s.  '
-                'Do you have the required permissions?' % repo
-            )
+    enabled = enable_ci_for_repo(repo_id, gh_token)
+    created = create_travis_files(full_name, gh_token)
 
-    return message
+    message = 'Travis hooks enabled for %s: %s' % (full_name, enabled)
+    for name, status in created.iteritems():
+        message += '; %s added to repository: %s' % (name, status)
+
+    flash(message)
+    return redirect(url_for('index'))
 
 
 #### Helper functions #########################################################
@@ -226,12 +238,6 @@ def create_new_repository(repo, gh_token):
 
     user, user_type, name = get_user_and_repo(repo)
 
-    if user_type == 'Organization':
-        raise NotImplementedError('Organizations are not yet supported')
-
-    if is_valid_repo(repo):
-        raise DuplicateRepoError("Repository '%s' already exists!" % repo)
-
     url = 'https://api.github.com/user/repos'
 
     headers = {
@@ -241,9 +247,8 @@ def create_new_repository(repo, gh_token):
 
     payload = {
         'name': name,
-        'description': 'Website using Nikola, created using statiki',
-        # fixme: add 'homepage'
-        # 'homepage': 'https://github.com',
+        'description': 'Website using Nikola, created from statiki',
+        'homepage': 'https://%s.github.io/%s' % (user, name),
         'private': False,
         'has_issues': False,
         'has_wiki': False,
@@ -255,28 +260,15 @@ def create_new_repository(repo, gh_token):
     return response.status_code == 201
 
 
-def create_template_site(path):
-    """ Create a template site at the specified path. """
-
-    import subprocess
-
-    try:
-        subprocess.check_call(['nikola', 'init', path])
-    except Exception as e:
-        path = None
-
-    return path
-
-
 def create_travis_files(repo, gh_token):
     """ Create the files required for Travis CI hooks to work. """
 
-    created = []
+    created = {}
 
     # Create .travis.yml
     content = get_travis_config_contents(repo, gh_token)
     name    = '.travis.yml'
-    created.append(
+    created[name] = (
         commit_to_github(name, content, repo, gh_token)
         if not github_path_exists(repo, name) else False
     )
@@ -284,12 +276,12 @@ def create_travis_files(repo, gh_token):
     # Create travis script file
     content = get_travis_script_file_contents(repo)
     name    = SCRIPT
-    created.append(
+    created[name] = (
         commit_to_github(name, content, repo, gh_token)
         if not github_path_exists(repo, name) else False
     )
 
-    return all(created)
+    return created
 
 
 def enable_ci_for_repo(repo_id, gh_token):
@@ -328,12 +320,8 @@ def get_encrypted_text(repo_name, data):
 def get_repo_id(repo):
     """ Get the id for a repo. """
 
-    if repo is not None:
-        url      = 'https://api.travis-ci.org/repos/%s' % repo
-        response = requests.get(url).json()
-
-    else:
-        response = {}
+    url      = 'https://api.travis-ci.org/repos/%s' % repo
+    response = requests.get(url).json()
 
     return response.get('id')
 
@@ -419,7 +407,9 @@ def is_travis_user(gh_token):
         'Authorization': 'token %s' % token,
         'Content-Type': 'application/json; charset=UTF-8'
     }
-    response = requests.get('http://api.travis-ci.org/users/', headers=headers)
+    response = requests.get(
+        'https://api.travis-ci.org/users/', headers=headers
+    )
 
     if response.status_code == 200:
         synced_at = response.json().get('synced_at')
@@ -448,7 +438,7 @@ def render_readme():
 def sync_and_get_repo_id(repo, gh_token):
     """ Sync repositories of the user from GitHub and try to get repo id. """
 
-    synced, message = sync_travis_with_github(gh_token)
+    synced = sync_travis_with_github(gh_token)
 
     if synced:
         repo_id = get_repo_id(repo)
@@ -456,7 +446,7 @@ def sync_and_get_repo_id(repo, gh_token):
     else:
         repo_id = None
 
-    return repo_id, message
+    return repo_id
 
 
 def sync_travis_with_github(gh_token):
@@ -474,15 +464,10 @@ def sync_travis_with_github(gh_token):
     if response.status_code == 200 and response.json()['result']:
         # fixme: this is ugly. should we make this async?
         synced = wait_until_sync_finishes(headers)
-        if synced:
-            message = 'Successfully synced.'
-        else:
-            message = 'Sync failed, abruptly.'
     else:
         synced = False
-        message = 'Sync could not be started.'
 
-    return synced, message
+    return synced
 
 
 def wait_until_sync_finishes(headers):

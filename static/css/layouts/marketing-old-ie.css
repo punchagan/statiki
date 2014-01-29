@@ -129,6 +129,19 @@ a.pure-button-primary {
   color: #AECFE5;
 }
 
+.flashes {
+width: 80%;
+height: 10%;
+overflow: hidden;
+margin: auto;
+position: absolute;
+top: 100px;
+left: 0;
+right: 0;
+text-align: center;
+color: #333333;
+}
+
 /*
  * -- SPLASH STYLES --
  * This is the blue top section that appears on the page.

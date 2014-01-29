@@ -37,7 +37,18 @@
     </div>
 </div>
 
+
 <div class="splash-container">
+    <div class="flashes">
+        {% set flashes = get_flashed_messages() %}
+        {% if flashes %}
+        {% for message in flashes %}
+        <div class="pure-u-1-2">
+            <p style="color: #fffff;">{{ message }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
     <div class="splash">
         <h1 class="splash-head">{{SITE}}</h1>
         {% if user.is_anonymous() %}
@@ -50,7 +61,7 @@
             <form class="pure-form" action="/manage" method="GET">
                 <fieldset>
                     <legend>Name of the repository to manage</legend>
-                    <input type="text" name="repo" placeholder="punchagan/statiki" required>
+                    <input type="text" name="repo_name" placeholder="punchagan/statiki" required>
                     <button type="submit" class="pure-button pure-button-primary">Manage!</button>
                 </fieldset>
             </form>
@@ -59,11 +70,6 @@
     </div>
 </div>
 
-<div style="display: none;">
-    {% for message in get_flashed_messages() %}
-    {{ message }}
-    {% endfor %}
-</div>
 
 <div class="content-wrapper">
     <div class="content">

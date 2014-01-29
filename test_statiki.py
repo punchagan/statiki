@@ -266,7 +266,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # When
         with patch('subprocess.check_call', check_call):
-            new = statiki.create_demo_site(path)
+            new = statiki.create_template_site(path)
 
         # Then
         self.assertEqual(new, path)
@@ -284,7 +284,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # When
         with patch('subprocess.check_call', check_call):
-            new = statiki.create_demo_site(path)
+            new = statiki.create_template_site(path)
 
         # Then
         self.assertIsNone(new)

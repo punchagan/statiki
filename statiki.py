@@ -211,8 +211,8 @@ def commit_to_github(path, content, repo, gh_token):
     return response.status_code == 201
 
 
-def create_demo_site(path):
-    """ Create a demo site at the specified path. """
+def create_template_site(path):
+    """ Create a template site at the specified path. """
 
     import subprocess
 
@@ -222,6 +222,7 @@ def create_demo_site(path):
         path = None
 
     return path
+
 
 def create_travis_files(repo, gh_token):
     """ Create the files required for Travis CI hooks to work. """

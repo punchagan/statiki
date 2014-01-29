@@ -249,7 +249,7 @@ class StatikiTestCase(unittest.TestCase):
         # When/Then
         self.assertTrue(statiki.github_path_exists(repo, path))
 
-    def test_should_create_empty_site(self):
+    def test_should_create_template_site(self):
         # Given
         path = join(self.tempdir, 'demo')
         config = join(path, 'conf.py')

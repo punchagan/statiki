@@ -1,31 +1,81 @@
 set -e
 
-# Build
-nikola build
+REPO=%(REPO)s
 
-# Exit if building on a pull request
-if [[ $TRAVIS_PULL_REQUEST != 'false' ]] ; then exit 0; fi
+# Run the build command and get rid of everything else.
+function build_html() {
+    # Build
+    nikola build
+
+    ## Remove all the source files, we only want the output!
+    ls | grep -v output | xargs rm -rf
+    mv output/* .
+}
+
+# Push the built html to github pages
+function deploy_html() {
+
+    git_create_gh_pages
+    build_html
+    git_commit_all
+    git_push_silent gh-pages
+
+}
+
+# Push to the specified branch
+function git_push_silent() {
+
+    # Push!
+    git push -f origin $1:$1 >/dev/null 2>&1
+    echo "Pushed to $1"
+}
+
+# Commit all the files in the current repository
+function git_commit_all() {
+
+    # Remove deleted files
+    git ls-files --deleted -z | xargs -0 git rm >/dev/null 2>&1
+
+    # Add new files
+    git add . >/dev/null 2>&1
+
+    # Commit
+    git commit -m "$(date)"
+}
 
 # Setup git for pushing from Travis
-## Setup user details, so commits etc work.
-git config user.email $GIT_EMAIL
-git config user.name $GIT_NAME
-## Change the remote url using the token
-git remote set-url --push origin https://$GH_TOKEN@github.com/%(REPO)s.git
+function git_config_setup() {
 
-# Commit the Build output
-## Create a new gh-pages branch
-git branch -D gh-pages || true
-git checkout --orphan gh-pages
-## Remove all the source files, we only want the output!
-ls | grep -v output | xargs rm -rf
-mv output/* .
-## Remove deleted files
-git ls-files --deleted -z | xargs -0 git rm >/dev/null 2>&1
-## Add new files
-git add . >/dev/null 2>&1
-## Commit
-git commit -m "$(date)"
+    git config user.email $GIT_EMAIL
+    git config user.name $GIT_NAME
 
-# Push!
-git push -f origin gh-pages:gh-pages >/dev/null 2>&1
+    git remote set-url --push origin https://$GH_TOKEN@github.com/$REPO.git
+}
+
+
+function git_create_gh_pages() {
+    ## Create a new gh-pages branch
+    git branch -D gh-pages || true
+    git checkout --orphan gh-pages
+}
+
+# Initialize site using nikola's sample site
+function initialize_site() {
+
+    nikola init .
+    git_commit_all
+    git_push_silent master
+
+}
+
+# Run only if not a pull request.
+if [[ $TRAVIS_PULL_REQUEST == 'false' ]] ; then
+    git_config_setup
+
+    if [[ ! -f conf.py ]]; then
+        initialize_site
+    fi
+
+    deploy_html
+
+fi

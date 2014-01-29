@@ -313,7 +313,7 @@ def get_travis_config_contents(repo, gh_token):
     config = {
         'env': {'global': {'secure': secure}},
         'before_install': 'sudo apt-get install -qq python-lxml',
-        'install': 'pip install nikola',
+        'install': 'pip install nikola webassets',
         'branches': {'only': ['master']},
         'language': 'python',
         'python': ['2.7'],

@@ -27,12 +27,11 @@ The name statiki is combination of static (from static-sites) and iki
 1. Create an account on GitHub, if you don't have one.
 2. Login/sign up on statiki's home page.
 3. Sign-up to travis-ci using your GitHub credentials
-   # fixme: can this be automated out?
 4. Choose one of the following urls for create your site::
 
     `http://<username>.github.io` OR `http://<username>.github.io/<reponame>`
 
-5. Click create.
+5. Click Go!
 
     statiki will create the appropriate repositories in your GitHub
     account.  It uses Nikola by default to create your site.
@@ -50,22 +49,27 @@ The name statiki is combination of static (from static-sites) and iki
 
 ## Current Status ##
 
-Currently, `statiki` can only enable automatic publishing for existing Nikola
-sites on GitHub.  You can give statiki the name of a repository that you own,
-as `<owner>/<repo-name>` after logging in, it will create a `.travis.yml` file
-in the repository, and enable the travis hooks for the repository.
+Currently, `statiki` can only enable automatic publishing for URLs like
+`http://<username>.github.io/<reponame>`.  Existing repositories,
+can also be managed by statiki (if they don't already have a .travis.yml file)
 
-Note that this will only work if you have a travis-ci account.  `statiki` will
-prompt you to create one, if it couldn't find one.
+Statiki initialized a demo nikola site (checks for conf.py if the repository
+is an old, existing one), and publishes the output.
 
 Test site runs [here](http://muse-amuse.in:5000)
 
-#### Notes & References ####
+### TO-DO ###
 
-- Remember to add a .nojekyll file.
-- Add links for documentation to Github pages, for various things like CNAME.
-- Add links to Travis-ci docs atleast for skip-ci stuff.
-- http://about.travis-ci.org/docs/user/deployment/custom/
-- http://awestruct.org/auto-deploy-to-github-pages/
-- FUTURE_IS_NOW mess-ups. Dates and timezone issues
-- Add a build status on the README!
+1. Add a .nojekyll file
+1. Add more logging on the server
+1. Allow repos in organizations
+1. Redirect to the newly created site on success, or atleast display link
+1. Improve the error messages shown.
+1. Add tests for the bash script.
+1. Clean-up the README added to the sites. Add a build status on the README!
+1. Use asynchronous job dispatch mechanism?
+1. See if Travis signup can be automated.
+1. Display the above how-to steps, elegantly on the site!
+1. Check timezone related issues?  For now, enable FUTURE_IS_NOW!
+1. Add a FAQ with links to GH pages, Travis CI docs. (CNAME, [skip ci], etc.)
+

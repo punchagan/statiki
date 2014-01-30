@@ -32,6 +32,7 @@ function git_push_silent() {
 
 # Commit all the files in the current repository
 function git_commit_all() {
+    set +e
 
     # Remove deleted files
     git ls-files --deleted -z | xargs -0 git rm >/dev/null 2>&1
@@ -41,6 +42,8 @@ function git_commit_all() {
 
     # Commit
     git commit -m "$(date)"
+
+    set -e
 }
 
 # Setup git for pushing from Travis
@@ -62,7 +65,8 @@ function git_create_gh_pages() {
 # Initialize site using nikola's sample site
 function initialize_site() {
 
-    nikola init . || test [ -f conf.py ]
+    nikola init --demo demo
+    mv demo/* .
     git_commit_all
     git_push_silent master
 

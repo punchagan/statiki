@@ -4,12 +4,14 @@
 import base64
 from functools import wraps
 import json
+import logging
+from logging.handlers import RotatingFileHandler
 from os.path import abspath, dirname, exists, join
 import re
 import yaml
 
 # 3rd party library.
-from flask import flash, Flask, redirect, render_template, request, url_for, get_flashed_messages
+from flask import flash, Flask, redirect, render_template, request, url_for
 from flask_login import (
     LoginManager, login_user, login_required, logout_user, UserMixin,
     current_user
@@ -35,6 +37,20 @@ else:
     path = join(HERE, 'sample-settings.py')
 app.config.from_pyfile(path)
 db = SQLAlchemy(app)
+
+# Logging setup
+formatter = logging.Formatter(
+    '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s'
+)
+handler = RotatingFileHandler(
+    app.config['LOG_FILENAME'], maxBytes=10000000, backupCount=5
+)
+handler.setLevel(logging.DEBUG)
+handler.setFormatter(formatter)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.DEBUG)
+log.addHandler(handler)
+app.logger.addHandler(handler)
 
 # Login related
 login_manager = LoginManager()
@@ -89,6 +105,7 @@ class User(db.Model, UserMixin):
         return '<User %r>' % self.username
 
     def set_access_token(self, access_token):
+        app.logger.info('Setting access token for %s', self.username)
         self.access_token = access_token
         db.session.commit()
 
@@ -142,6 +159,8 @@ def authorized():
     user_obj = User.get_or_create(user['login'], user['id'])
     user_obj.set_access_token(session.access_token)
     login_user(user_obj)
+    app.logger.info('Logged in user %s', user_obj.username)
+
 
     flash('Logged in as ' + user.get('name', user['login']))
     return redirect(url_for('index'))
@@ -161,6 +180,7 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
+    app.logger.info('Logging out user %s', current_user.username)
     logout_user()
     return redirect(url_for('index'))
 
@@ -180,14 +200,18 @@ def manage():
 
     # If repo does not exist, create it.
     if not is_valid_repo(full_name):
+        app.logger.info('Creating new repository %s', full_name)
         create_new_repository(full_name, gh_token)
+        app.logger.info('Created repository %s', full_name)
 
     # If repo not listed in travis, sync
     repo_id = get_repo_id(full_name)
     if repo_id is None:
+        app.logger.info('Repo id for %s is None. Syncing', full_name)
         repo_id = sync_and_get_repo_id(full_name, gh_token)
 
     if repo_id is None:
+        app.logger.info('Repo %s could not be found.', full_name)
         flash(
             'Repo could not be found. Run a sync, <a href='
             '"http://travis-ci.org/profile" target="_blank">manually?</a>'
@@ -202,6 +226,7 @@ def manage():
         message += '; %s added to repository: %s' % (name, status)
 
     flash(message)
+    app.logger.info('Successfully managing %s!', full_name)
     return redirect(url_for('index'))
 
 
@@ -223,8 +248,11 @@ def commit_to_github(path, content, repo, gh_token):
         'message': 'Adding %s (from statiki).' % path,
         'content': base64.standard_b64encode(content),
     }
-
+    app.logger.info('Committing file %s to %s', path, repo)
     response = requests.put(url, data=json.dumps(payload), headers=headers)
+    app.logger.info(
+        'Commit file request: %s, %s', response.status_code, response.text
+    )
 
     return response.status_code == 201
 
@@ -255,7 +283,11 @@ def create_new_repository(repo, gh_token):
         'has_downloads': False,
     }
 
+    app.logger.info('Creating new repo: %s', repo)
     response = requests.post(url, data=json.dumps(payload), headers=headers)
+    app.logger.info(
+        'Create new repo: %s, %s', response.status_code, response.text
+    )
 
     return response.status_code == 201
 
@@ -300,7 +332,11 @@ def enable_ci_for_repo(repo_id, gh_token):
         }
 
         url = 'https://api.travis-ci.org/hooks/%s' % repo_id
+        app.logger.info('Enabling CI for %s', repo_id)
         response = requests.put(url, data=payload,  headers=headers)
+        app.logger.info(
+            'Enabling CI: %s, %s', response.status_code, response.text
+        )
         status = response.status_code == 200
 
     return status
@@ -331,6 +367,7 @@ def get_travis_access_token(gh_token):
     url = 'https://api.travis-ci.org/auth/github'
     data = {'github_token': gh_token}
 
+    app.logger.info('Getting access_token')
     return requests.post(url, data=data).json().get('access_token')
 
 
@@ -371,6 +408,7 @@ def get_travis_public_key(repo):
 
     url = 'https://api.travis-ci.org/repos/%s' % repo
     response = requests.get(url)
+    app.logger.info('Getting travis public key for %s', repo)
 
     return response.json()['public_key'].replace('RSA PUBLIC', 'PUBLIC')
 
@@ -407,6 +445,7 @@ def is_travis_user(gh_token):
         'Authorization': 'token %s' % token,
         'Content-Type': 'application/json; charset=UTF-8'
     }
+    app.logger.info('Checking if current user is a travis user')
     response = requests.get(
         'https://api.travis-ci.org/users/', headers=headers
     )

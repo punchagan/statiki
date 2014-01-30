@@ -72,4 +72,5 @@ Test site runs [here](http://muse-amuse.in:5000)
 1. Display the above how-to steps, elegantly on the site!
 1. Check timezone related issues?  For now, enable FUTURE_IS_NOW!
 1. Add a FAQ with links to GH pages, Travis CI docs. (CNAME, [skip ci], etc.)
+1. Add a status page that aggregates GH & Travis's status. ;)
 

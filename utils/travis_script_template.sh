@@ -65,6 +65,7 @@ function git_create_gh_pages() {
 # Initialize site using nikola's sample site
 function initialize_site() {
 
+    git checkout master
     nikola init --demo demo
     mv demo/* .
     git_commit_all

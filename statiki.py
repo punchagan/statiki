@@ -11,10 +11,12 @@ import re
 import yaml
 
 # 3rd party library.
-from flask import flash, Flask, redirect, render_template, request, url_for
+from flask import (
+    flash, Flask, jsonify, redirect, render_template, request, url_for
+)
 from flask_login import (
-    LoginManager, login_user, login_required, logout_user, UserMixin,
-    current_user
+    current_user, LoginManager, login_user, login_required, logout_user,
+    UserMixin
 )
 from flask_sqlalchemy import SQLAlchemy
 from markdown import markdown
@@ -39,18 +41,19 @@ app.config.from_pyfile(path)
 db = SQLAlchemy(app)
 
 # Logging setup
-formatter = logging.Formatter(
-    '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s'
-)
-handler = RotatingFileHandler(
-    app.config['LOG_FILENAME'], maxBytes=10000000, backupCount=5
-)
-handler.setLevel(logging.DEBUG)
-handler.setFormatter(formatter)
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.DEBUG)
-log.addHandler(handler)
-app.logger.addHandler(handler)
+if not app.config.get('DEBUG', False):
+    formatter = logging.Formatter(
+        '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s'
+    )
+    handler = RotatingFileHandler(
+        app.config['LOG_FILENAME'], maxBytes=10000000, backupCount=5
+    )
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter)
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.DEBUG)
+    log.addHandler(handler)
+    app.logger.addHandler(handler)
 
 # Login related
 login_manager = LoginManager()
@@ -80,11 +83,13 @@ def travis_login_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
         if not is_travis_user(current_user.access_token):
-            flash(
-                'Please <a href="https://travis-ci.org/profile" target='
-                '"_blank">signup</a> for a Travis-ci account to proceed.'
-            )
-            return redirect(url_for('index'))
+            response = {
+                'message': (
+                    'Please <a href="https://travis-ci.org/profile" target='
+                    '"_blank">signup</a> for a Travis-ci account to proceed.'
+                ),
+            }
+            return jsonify(response)
         return func(*args, **kwargs)
     return decorated_view
 
@@ -161,8 +166,6 @@ def authorized():
     login_user(user_obj)
     app.logger.info('Logged in user %s', user_obj.username)
 
-
-    flash('Logged in as ' + user.get('name', user['login']))
     return redirect(url_for('index'))
 
 
@@ -185,18 +188,18 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/manage')
+@app.route('/manage', methods=['POST'])
 @login_required
 @travis_login_required
 def manage():
 
-    repo_name = request.args.get('repo_name', None)
+    repo_name = request.form.get('repo_name', None)
     full_name = '%s/%s' % (current_user.username, repo_name)
     gh_token  = current_user.access_token
 
     if not repo_name:
-        flash('Need a valid repository name.')
-        return redirect(url_for('index'))
+        message = 'Need a valid repository name.',
+        return jsonify(dict(message=message))
 
     # If repo does not exist, create it.
     if not is_valid_repo(full_name):
@@ -212,22 +215,19 @@ def manage():
 
     if repo_id is None:
         app.logger.info('Repo %s could not be found.', full_name)
-        flash(
+        message = (
             'Repo could not be found. Run a sync, <a href='
             '"http://travis-ci.org/profile" target="_blank">manually?</a>'
         )
-        return redirect(url_for('index'))
+        return jsonify(dict(message=message))
 
     enabled = enable_ci_for_repo(repo_id, gh_token)
     created = create_travis_files(full_name, gh_token)
 
-    message = 'Travis hooks enabled for %s: %s' % (full_name, enabled)
-    for name, status in created.iteritems():
-        message += '; %s added to repository: %s' % (name, status)
+    response = get_user_response(enabled, created)
+    response['message'] %= full_name
 
-    flash(message)
-    app.logger.info('Successfully managing %s!', full_name)
-    return redirect(url_for('index'))
+    return jsonify(response)
 
 
 #### Helper functions #########################################################
@@ -428,8 +428,43 @@ def get_user_and_repo(repo):
     return user, user_type, name
 
 
+def get_user_response(enabled, created):
+    """ Return the response for the user, based on enabled and created. """
+
+    hook_success = 'Successfully enabled publish hook for %s'
+    hook_failure = 'Failed to enable publish hooks for %s'
+    create_fail  = ', failed to publish: %s'
+
+    if enabled and all(created.values()):
+        message = 'Successfully enabled publishing for %s'
+        success = True
+
+    elif enabled:
+        paths = ', '.join(
+            [name for name, status in created.items() if not status]
+        )
+        message = '. But'.join([hook_success, create_fail % paths])
+        success = False
+
+    else:
+        paths = ', '.join(
+            [name for name, status in created.items() if not status]
+        )
+        message = '. And'.join([hook_failure, create_fail % paths])
+        success = False
+
+    response = {
+        'message': message,
+        'success': success
+    }
+
+    return response
+
+
 def github_path_exists(repo, path):
     """ Return True if the given repository has the given path. """
+
+    #fixme: make this an authenticated request.
 
     url = 'repos/%s/contents/%s' % (repo, path)
     url = 'https://api.github.com/' + url

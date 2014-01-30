@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="/static/css/layouts/marketing.css">
 <!--<![endif]-->
 <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+<script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
 </head>
 <body>
 
@@ -39,7 +40,7 @@
 
 
 <div class="splash-container">
-    <div class="flashes">
+    <div id="status" class="flashes" style="color: #fffff;">
         {% set flashes = get_flashed_messages() %}
         {% if flashes %}
         {% for message in flashes %}
@@ -58,7 +59,7 @@
         </p>
         {% else %}
         <div>
-            <form class="pure-form" action="/manage" method="GET">
+            <form id="submit-repo" class="pure-form" action="">
                 <fieldset>
                     <legend>Site to create and/or manage</legend>
                     <div class="pure-u">
@@ -82,6 +83,6 @@
         Made with <3 by <a href="https://github.com/punchagan">punchagan</a> &ndash; CSS using <a href="http://purecss.io/layouts/marketing/">Pure</a>
     </div>
 </div>
-
+<script src="/static/js/custom.js"></script>
 </body>
 </html>

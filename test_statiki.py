@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import json
-from os.path import exists, join
+import logging
+from os.path import join
 import shutil
 import tempfile
 import unittest
@@ -63,7 +64,6 @@ class StatikiTestCase(unittest.TestCase):
         # Then
         self.assertEqual(302, response.status_code)
         self.assertIn('<a href="/">/</a>', response.data)
-        self.assertIn('Logged in as Fred', next_response.data)
         self.assertIn('Logout', next_response.data)
 
     def test_logout_should_redirect_to_index(self):
@@ -83,12 +83,11 @@ class StatikiTestCase(unittest.TestCase):
         with self.logged_in_as_fred():
 
             # When
-            response = self.app.get('/manage?repo_name=statiki')
-            next_response = self.app.get()
+            response = self.app.post('/manage', data=dict(repo_name='statiki'))
 
         # Then
-        self.assertEqual(302, response.status_code)
-        self.assertIn('Travis-ci account', next_response.data)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('Travis-ci account', response.data)
 
     def test_should_request_repo_name(self):
         # Given
@@ -96,12 +95,11 @@ class StatikiTestCase(unittest.TestCase):
             with patch('statiki.is_travis_user', Mock(return_value=True)):
 
                 # When
-                response = self.app.get('/manage')
-                next_response = self.app.get()
+                response = self.app.post('/manage')
 
         # Then
-        self.assertEqual(302, response.status_code)
-        self.assertIn('Need a valid repository name', next_response.data)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('Need a valid repository name', response.data)
 
     def test_should_create_repo(self):
         # Given
@@ -114,7 +112,7 @@ class StatikiTestCase(unittest.TestCase):
                 with patch('statiki.is_valid_repo', Mock(return_value=False)):
                     with patch('statiki.create_new_repository', create):
                         with self.assertRaises(RuntimeError) as e:
-                            self.app.get('/manage?repo_name=foo')
+                            self.app.post('/manage', data={'repo_name': 'foo'})
 
         # Then
         self.assertEquals(e.exception.args, ('punchagan/foo', 'foo bar baz'))
@@ -131,13 +129,13 @@ class StatikiTestCase(unittest.TestCase):
                     with patch('statiki.get_repo_id', true):
                         with patch('statiki.enable_ci_for_repo', true):
                             with patch('statiki.create_travis_files', files):
-                                response = self.app.get('/manage?repo_name=X')
-
-        next_response = self.app.get()
+                                response = self.app.post(
+                                    '/manage', data={'repo_name': 'X'}
+                                )
 
         # Then
-        self.assertEqual(302, response.status_code)
-        self.assertIn('enabled for punchagan/x', next_response.data.lower())
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(json.loads(response.data)['success'])
 
     def test_should_inform_new_repository_sync_fails(self):
         # Given
@@ -154,12 +152,13 @@ class StatikiTestCase(unittest.TestCase):
             with patch('statiki.is_travis_user', Mock(return_value=True)):
                 with patch('requests.post', Mock(return_value=sync)):
                     with patch('requests.get', Mock(return_value=user)):
-                        response = self.app.get('/manage?repo_name=svms')
-        next_response = self.app.get()
+                        response = self.app.post(
+                            '/manage', data={'repo_name': 'svms'}
+                        )
 
         # Then
-        self.assertEqual(302, response.status_code)
-        self.assertIn('run a sync', next_response.data.lower())
+        self.assertEqual(200, response.status_code)
+        self.assertIn('run a sync', response.data.lower())
 
     def test_should_inform_sync_fails_to_start(self):
         # Given
@@ -176,12 +175,13 @@ class StatikiTestCase(unittest.TestCase):
             with patch('statiki.is_travis_user', Mock(return_value=True)):
                 with patch('requests.post', Mock(return_value=sync)):
                     with patch('requests.get', Mock(return_value=user)):
-                        response = self.app.get('/manage?repo_name=svms')
-        next_response = self.app.get()
+                        response = self.app.post(
+                            '/manage', data={'repo_name': 'svms'}
+                        )
 
         # Then
-        self.assertEqual(302, response.status_code)
-        self.assertIn('run a sync', next_response.data.lower())
+        self.assertEqual(200, response.status_code)
+        self.assertIn('run a sync', response.data.lower())
 
     def test_should_inform_sync_abort(self):
         # Given
@@ -199,12 +199,13 @@ class StatikiTestCase(unittest.TestCase):
                 with patch('statiki.is_valid_repo', Mock(return_value=True)):
                     with patch('requests.post', Mock(return_value=sync)):
                         with patch('requests.get', Mock(return_value=user)):
-                            response = self.app.get('/manage?repo_name=svms')
-        next_response = self.app.get()
+                            response = self.app.post(
+                                '/manage', data={'repo_name': 'svms'}
+                            )
 
         # Then
-        self.assertEqual(302, response.status_code)
-        self.assertIn('run a sync', next_response.data.lower())
+        self.assertEqual(200, response.status_code)
+        self.assertIn('run a sync', response.data.lower())
 
     def test_should_inform_new_repository_sync_succeeds(self):
         # Given
@@ -221,12 +222,13 @@ class StatikiTestCase(unittest.TestCase):
                 with patch('requests.get', Mock(return_value=user)):
 
                     # When
-                    response = self.app.get('/manage?repo_name=svms')
-                    next_response = self.app.get()
+                    response = self.app.post(
+                        '/manage', data={'repo_name': 'svms'}
+                    )
 
         # Then
-        self.assertEqual(302, response.status_code)
-        self.assertIn('run a sync', next_response.data.lower())
+        self.assertEqual(200, response.status_code)
+        self.assertIn('run a sync', response.data.lower())
 
     def test_should_not_enable_hook_unauthorized(self):
         # Given
@@ -237,15 +239,13 @@ class StatikiTestCase(unittest.TestCase):
             with patch('statiki.is_travis_user', return_true):
                 with patch('statiki.get_travis_access_token', return_true):
                     with patch('statiki.get_repo_id', return_true):
-                        response = self.app.get('/manage?repo_name=statiki')
-
-        next_response = self.app.get()
+                        response = self.app.post(
+                            '/manage', data={'repo_name': 'statiki'}
+                        )
 
         # Then
-        self.assertEqual(302, response.status_code)
-        self.assertIn(
-            'enabled for punchagan/statiki: false', next_response.data.lower()
-        )
+        self.assertEqual(200, response.status_code)
+        self.assertIn('Failed to enable', response.data)
 
     def test_should_manage_existing_repo(self):
         # Given
@@ -256,14 +256,15 @@ class StatikiTestCase(unittest.TestCase):
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', return_true):
                 with patch('statiki.github_path_exists', return_false):
-                    response = self.app.get('/manage?repo_name=experiri')
-
-        next_response = self.app.get()
+                    with patch('statiki.enable_ci_for_repo', return_true):
+                        response = self.app.post(
+                            '/manage', data={'repo_name': 'experiri'}
+                        )
 
         # Then
-        self.assertEqual(302, response.status_code)
+        self.assertEqual(200, response.status_code)
         self.assertIn(
-            'enabled for punchagan/experiri', next_response.data.lower()
+            'enabled publish hook for punchagan/experiri', response.data
         )
 
     def test_github_path_exists(self):

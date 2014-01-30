@@ -60,9 +60,7 @@ Test site runs [here](http://muse-amuse.in:5000)
 
 ### TO-DO ###
 
-1. Use asynchronous job dispatch mechanism?
 1. Redirect to the newly created site on success, or atleast display link
-1. Improve messages communicated to the user.
 1. Allow repos in organizations
 1. Add tests for the bash script.
 1. Clean-up the README added to the sites. Add a build status on the README!

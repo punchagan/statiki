@@ -68,6 +68,7 @@ function initialize_site() {
     git checkout master
     nikola init --demo demo
     mv demo/* .
+    touch files/.nojekyll
     git_commit_all
     git_push_silent master
 

@@ -60,7 +60,6 @@ Test site runs [here](http://muse-amuse.in:5000)
 
 ### TO-DO ###
 
-1. Add a .nojekyll file
 1. Add more logging on the server
 1. Allow repos in organizations
 1. Redirect to the newly created site on success, or atleast display link

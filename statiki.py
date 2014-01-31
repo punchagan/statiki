@@ -305,17 +305,17 @@ def create_travis_files(repo, gh_token):
 
     created = {}
 
-    # Create .travis.yml
-    content = get_travis_config_contents(repo, gh_token)
-    name    = '.travis.yml'
+    # Create travis script file
+    content = get_travis_script_file_contents(repo)
+    name    = SCRIPT
     created[name] = (
         commit_to_github(name, content, repo, gh_token)
         if not github_path_exists(repo, name) else False
     )
 
-    # Create travis script file
-    content = get_travis_script_file_contents(repo)
-    name    = SCRIPT
+    # Create .travis.yml
+    content = get_travis_config_contents(repo, gh_token)
+    name    = '.travis.yml'
     created[name] = (
         commit_to_github(name, content, repo, gh_token)
         if not github_path_exists(repo, name) else False

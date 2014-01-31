@@ -14,7 +14,7 @@ $('form#submit-repo').submit(
       $(this).serialize(),
       function(data, status_code, jqxhr) {
         $('#status').children().remove()
-        status.append($('<p>').text(data.message));
+        status.append($('<p>').html(data.message));
       }
     );
 

@@ -6,7 +6,6 @@ $('form#submit-repo').submit(
     var repo = $('label[for="repo_name"]').text() + $('input[name="repo_name"]').val();
     var text = 'Processing to create ' + repo + ' ...';
     $('#status').children().remove();
-    $('input[name="repo_name"]').val('');
     var processing = $('<span id="processing">').text(text)
     status.append(processing);
 
@@ -17,6 +16,9 @@ $('form#submit-repo').submit(
         $('#status').children().remove()
         status.append($('<p>').text(data.message));
       }
-    )
+    );
+
+    $('input[name="repo_name"]').val('');
+
   }
 );

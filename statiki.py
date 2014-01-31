@@ -208,10 +208,11 @@ def manage():
         app.logger.info('Created repository %s', full_name)
 
     # If repo not listed in travis, sync
-    repo_id = get_repo_id(full_name)
+    repo_id = get_repo_id(full_name, gh_token)
     if repo_id is None:
         app.logger.info('Repo id for %s is None. Syncing', full_name)
-        repo_id = sync_and_get_repo_id(full_name, gh_token)
+        sync_travis_with_github(gh_token)
+        repo_id = get_repo_id(full_name, gh_token)
 
     if repo_id is None:
         app.logger.info('Repo %s could not be found.', full_name)
@@ -360,13 +361,18 @@ def get_encrypted_text(repo_name, data):
     return secure
 
 
-def get_repo_id(repo):
+def get_repo_id(repo, gh_token):
     """ Get the id for a repo. """
 
-    url      = 'https://api.travis-ci.org/repos/%s' % repo
-    response = requests.get(url).json()
+    if travis_hook_exists(repo, gh_token):
+        url      = 'https://api.travis-ci.org/repos/%s' % repo
+        response = requests.get(url).json()
+        repo_id = response.get('id')
 
-    return response.get('id')
+    else:
+        repo_id = None
+
+    return repo_id
 
 
 def get_travis_access_token(gh_token):
@@ -516,20 +522,6 @@ def render_readme():
             g.write(readme)
 
 
-def sync_and_get_repo_id(repo, gh_token):
-    """ Sync repositories of the user from GitHub and try to get repo id. """
-
-    synced = sync_travis_with_github(gh_token)
-
-    if synced:
-        repo_id = get_repo_id(repo)
-
-    else:
-        repo_id = None
-
-    return repo_id
-
-
 def sync_travis_with_github(gh_token):
     """ Sync the repositories of the user from GitHub. """
 
@@ -549,6 +541,29 @@ def sync_travis_with_github(gh_token):
         synced = False
 
     return synced
+
+
+def travis_hook_exists(full_name, gh_token):
+    """ Return True if a hook for the repo is listed on travis. """
+
+    token    = get_travis_access_token(gh_token)
+    headers  = {
+        'Authorization': 'token %s' % token,
+        'Content-Type': 'application/json; charset=UTF-8'
+    }
+    response = requests.get('http://api.travis-ci.org/hooks', headers=headers)
+    owner, name = full_name.split('/')
+    if response.status_code == 200:
+        repos = [
+            repo for repo in response.json()
+            if repo['name'] == name and repo['owner_name'] == owner
+        ]
+        hook_exists = len(repos) > 0
+
+    else:
+        hook_exists = False
+
+    return hook_exists
 
 
 def wait_until_sync_finishes(headers):

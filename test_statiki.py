@@ -147,14 +147,17 @@ class StatikiTestCase(unittest.TestCase):
         user._content = json.dumps(dict(is_syncing=True))
         user.status_code = 200
 
+        true = Mock(return_value=True)
+
         # When
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', Mock(return_value=True)):
                 with patch('requests.post', Mock(return_value=sync)):
                     with patch('requests.get', Mock(return_value=user)):
-                        response = self.app.post(
-                            '/manage', data={'repo_name': 'svms'}
-                        )
+                        with patch('statiki.travis_hook_exists', true):
+                            response = self.app.post(
+                                '/manage', data={'repo_name': 'svms'}
+                            )
 
         # Then
         self.assertEqual(200, response.status_code)
@@ -170,14 +173,17 @@ class StatikiTestCase(unittest.TestCase):
         user._content = json.dumps(dict(is_syncing=True))
         user.status_code = 200
 
+        true = Mock(return_value=True)
+
         # When
         with self.logged_in_as_fred():
             with patch('statiki.is_travis_user', Mock(return_value=True)):
                 with patch('requests.post', Mock(return_value=sync)):
                     with patch('requests.get', Mock(return_value=user)):
-                        response = self.app.post(
-                            '/manage', data={'repo_name': 'svms'}
-                        )
+                        with patch('statiki.travis_hook_exists', true):
+                            response = self.app.post(
+                                '/manage', data={'repo_name': 'svms'}
+                            )
 
         # Then
         self.assertEqual(200, response.status_code)
@@ -217,14 +223,16 @@ class StatikiTestCase(unittest.TestCase):
         user._content = json.dumps(dict(is_syncing=False, synced_at='xxx'))
         user.status_code = 200
 
+        true = Mock(return_value=True)
+
         with self.logged_in_as_fred():
             with patch('requests.post', Mock(return_value=sync)):
                 with patch('requests.get', Mock(return_value=user)):
-
-                    # When
-                    response = self.app.post(
-                        '/manage', data={'repo_name': 'svms'}
-                    )
+                    with patch('statiki.travis_hook_exists', true):
+                        # When
+                        response = self.app.post(
+                            '/manage', data={'repo_name': 'svms'}
+                        )
 
         # Then
         self.assertEqual(200, response.status_code)
@@ -257,9 +265,10 @@ class StatikiTestCase(unittest.TestCase):
             with patch('statiki.is_travis_user', return_true):
                 with patch('statiki.github_path_exists', return_false):
                     with patch('statiki.enable_ci_for_repo', return_true):
-                        response = self.app.post(
-                            '/manage', data={'repo_name': 'experiri'}
-                        )
+                        with patch('statiki.travis_hook_exists', return_true):
+                            response = self.app.post(
+                                '/manage', data={'repo_name': 'experiri'}
+                            )
 
         # Then
         self.assertEqual(200, response.status_code)

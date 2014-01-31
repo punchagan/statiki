@@ -56,10 +56,11 @@ can also be managed by statiki (if they don't already have a .travis.yml file)
 Statiki initialized a demo nikola site (checks for conf.py if the repository
 is an old, existing one), and publishes the output.
 
-Test site runs [here](http://muse-amuse.in:5000)
+Runs at [http://statiki.muse-amuse.in](http://statiki.muse-amuse.in)
 
 ### TO-DO ###
 
+1. Add javascript tests
 1. Redirect to the newly created site on success, or atleast display link
 1. Allow repos in organizations
 1. Add tests for the bash script.

@@ -556,7 +556,7 @@ def wait_until_sync_finishes(headers):
 
     count = 0
 
-    while count < 10:
+    while count < 50:
         count += 1
         response = requests.get(
             'http://api.travis-ci.org/users/', headers=headers

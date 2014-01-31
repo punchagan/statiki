@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import json
-import logging
-from os.path import join
+import os
+from os.path import abspath, exists, join
 import shutil
 import tempfile
 import unittest
@@ -288,6 +288,19 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertTrue(created)
+
+    def test_render_readme(self):
+        # Given
+        readme = join(abspath(statiki.app.template_folder), 'readme.html')
+        if exists(readme):
+            os.unlink(readme)
+
+        # When
+        with self.logged_in_as_fred():
+            self.app.get('/readme')
+
+        # Then
+        self.assertTrue(exists(readme))
 
     #### Private protocol #####################################################
 

@@ -230,6 +230,14 @@ def manage():
     return jsonify(response)
 
 
+@app.route('/readme')
+@login_required
+def update_readme():
+    # Render the readme, again
+    render_readme()
+    return render_template('readme.html')
+
+
 #### Helper functions #########################################################
 
 def commit_to_github(path, content, repo, gh_token):

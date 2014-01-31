@@ -231,7 +231,6 @@ def manage():
 
 
 @app.route('/readme')
-@login_required
 def update_readme():
     # Render the readme, again
     render_readme()

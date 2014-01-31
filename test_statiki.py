@@ -296,8 +296,7 @@ class StatikiTestCase(unittest.TestCase):
             os.unlink(readme)
 
         # When
-        with self.logged_in_as_fred():
-            self.app.get('/readme')
+        self.app.get('/readme')
 
         # Then
         self.assertTrue(exists(readme))

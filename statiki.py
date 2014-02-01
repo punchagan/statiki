@@ -24,6 +24,9 @@ from rauth.service import OAuth2Service
 import requests
 import rsa
 
+# Local library.
+import messages
+
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 SCRIPT = 'travis_build_n_deploy.sh'
 HERE = dirname(abspath(__file__))
@@ -83,13 +86,7 @@ def travis_login_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
         if not is_travis_user(current_user.access_token):
-            response = {
-                'message': (
-                    'Please <a href="https://travis-ci.org/profile" target='
-                    '"_blank">signup</a> for a Travis-ci account to proceed.'
-                ),
-            }
-            return jsonify(response)
+            return jsonify(dict(message=messages.NO_TRAVIS_ACCOUNT))
         return func(*args, **kwargs)
     return decorated_view
 
@@ -149,7 +146,7 @@ def index():
 def authorized():
     # check to make sure the user authorized the request
     if not 'code' in request.args:
-        flash('You did not authorize the request')
+        flash(messages.AUTH_DECLINED)
         return redirect(url_for('index'))
 
     # make a request for the access token credentials using code
@@ -198,7 +195,7 @@ def manage():
     gh_token  = current_user.access_token
 
     if not repo_name:
-        message = 'Need a valid repository name.',
+        message = messages.EMPTY_REPO_NAME
         return jsonify(dict(message=message))
 
     # If repo does not exist, create it.
@@ -216,18 +213,14 @@ def manage():
 
     if repo_id is None:
         app.logger.info('Repo %s could not be found.', full_name)
-        message = (
-            'Repo could not be found. Run a sync, <a href='
-            '"http://travis-ci.org/profile" target="_blank">manually?</a>'
-        )
+        message = messages.NO_SUCH_REPO_FOUND
         return jsonify(dict(message=message))
 
     enabled = enable_ci_for_repo(repo_id, gh_token)
     created = create_travis_files(full_name, gh_token)
 
     response = get_user_response(enabled, created)
-    response['message'] %= full_name
-
+    response['message'] %= dict(USER=current_user.username, REPO=full_name)
     return jsonify(response)
 
 
@@ -444,26 +437,16 @@ def get_user_and_repo(repo):
 def get_user_response(enabled, created):
     """ Return the response for the user, based on enabled and created. """
 
-    hook_success = 'Successfully enabled publish hook for %s'
-    hook_failure = 'Failed to enable publish hooks for %s'
-    create_fail  = ', failed to publish: %s'
-
     if enabled and all(created.values()):
-        message = 'Successfully enabled publishing for %s'
         success = True
+        message = messages.DONE
 
     elif enabled:
-        paths = ', '.join(
-            [name for name, status in created.items() if not status]
-        )
-        message = '. But'.join([hook_success, create_fail % paths])
+        message = messages.ONLY_HOOKS_ENABLED
         success = False
 
     else:
-        paths = ', '.join(
-            [name for name, status in created.items() if not status]
-        )
-        message = '. And'.join([hook_failure, create_fail % paths])
+        message = messages.TOTAL_FAILURE
         success = False
 
     response = {

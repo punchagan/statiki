@@ -11,6 +11,7 @@ from rauth.service import OAuth2Service
 from requests import Response
 
 import statiki
+import messages
 
 
 class StatikiTestCase(unittest.TestCase):
@@ -53,7 +54,7 @@ class StatikiTestCase(unittest.TestCase):
         # Then
         self.assertEqual(302, response.status_code)
         self.assertIn('<a href="/">/</a>', response.data)
-        self.assertIn('You did not authorize', next_response.data)
+        self.assertIn(messages.AUTH_DECLINED, next_response.data)
 
     def test_should_return_to_login_on_authorized(self):
         # Given
@@ -87,7 +88,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('Travis-ci account', response.data)
+        self.assertIn(json.dumps(messages.NO_TRAVIS_ACCOUNT), response.data)
 
     def test_should_request_repo_name(self):
         # Given
@@ -99,7 +100,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('Need a valid repository name', response.data)
+        self.assertIn(messages.EMPTY_REPO_NAME, response.data)
 
     def test_should_create_repo(self):
         # Given
@@ -161,7 +162,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('run a sync', response.data.lower())
+        self.assertIn(json.dumps(messages.NO_SUCH_REPO_FOUND), response.data)
 
     def test_should_inform_sync_fails_to_start(self):
         # Given
@@ -187,7 +188,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('run a sync', response.data.lower())
+        self.assertIn(json.dumps(messages.NO_SUCH_REPO_FOUND), response.data)
 
     def test_should_inform_sync_abort(self):
         # Given
@@ -211,7 +212,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('run a sync', response.data.lower())
+        self.assertIn(json.dumps(messages.NO_SUCH_REPO_FOUND), response.data)
 
     def test_should_inform_new_repository_sync_succeeds(self):
         # Given
@@ -236,7 +237,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('run a sync', response.data.lower())
+        self.assertIn(json.dumps(messages.NO_SUCH_REPO_FOUND), response.data)
 
     def test_should_not_enable_hook_unauthorized(self):
         # Given
@@ -253,7 +254,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn('Failed to enable', response.data)
+        self.assertIn(messages.TOTAL_FAILURE, response.data)
 
     def test_should_manage_existing_repo(self):
         # Given
@@ -272,9 +273,7 @@ class StatikiTestCase(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
-        self.assertIn(
-            'enabled publish hook for punchagan/experiri', response.data
-        )
+        self.assertIn(messages.ONLY_HOOKS_ENABLED, response.data)
 
     def test_github_path_exists(self):
         # Given

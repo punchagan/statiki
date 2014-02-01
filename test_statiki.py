@@ -214,31 +214,6 @@ class StatikiTestCase(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn(json.dumps(messages.NO_SUCH_REPO_FOUND), response.data)
 
-    def test_should_inform_new_repository_sync_succeeds(self):
-        # Given
-        sync = Response()
-        sync._content = json.dumps(dict(result=True))
-        sync.status_code = 200
-
-        user = Response()
-        user._content = json.dumps(dict(is_syncing=False, synced_at='xxx'))
-        user.status_code = 200
-
-        true = Mock(return_value=True)
-
-        with self.logged_in_as_fred():
-            with patch('requests.post', Mock(return_value=sync)):
-                with patch('requests.get', Mock(return_value=user)):
-                    with patch('statiki.travis_hook_exists', true):
-                        # When
-                        response = self.app.post(
-                            '/manage', data={'repo_name': 'svms'}
-                        )
-
-        # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn(json.dumps(messages.NO_SUCH_REPO_FOUND), response.data)
-
     def test_should_not_enable_hook_unauthorized(self):
         # Given
         return_true = Mock(return_value=True)

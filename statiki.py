@@ -3,6 +3,7 @@
 # Standard library.
 from functools import wraps
 from os.path import abspath, dirname, exists, join
+from textwrap import dedent
 
 # 3rd party library.
 from flask import (
@@ -207,10 +208,15 @@ def manage():
 
 
 @app.route('/readme')
-def update_readme():
+def show_readme():
     # Render the readme, again
     render_readme()
-    return render_template('readme.html')
+    context = {
+        'user': current_user,
+        'SITE': SITE,
+        'DESCRIPTION': DESCRIPTION,
+    }
+    return render_template('readme.html', **context)
 
 
 #### Helper functions #########################################################
@@ -261,15 +267,24 @@ def render_readme():
 
     with open(join(HERE, 'README.md')) as f:
         with open(join(HERE, 'templates', 'readme.html'), 'w') as g:
-            readme = markdown(f.read())
-            g.write(readme)
+            g.write(
+                dedent(
+                    """{%% extends 'base.html' %%}
+
+                    {%% block content %%}
+
+                    %(README)s
+
+                    {%% endblock %%}
+                    """
+                ) % {'README': markdown(f.read())}
+            )
 
 
 #### Standalone ###############################################################
 
 if __name__ == '__main__':
     db.create_all()
-    render_readme()
     app.run(host='0.0.0.0')
 
 #### EOF ######################################################################

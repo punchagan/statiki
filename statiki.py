@@ -207,18 +207,6 @@ def manage():
     return jsonify(response)
 
 
-@app.route('/readme')
-def show_readme():
-    # Render the readme, again
-    render_readme()
-    context = {
-        'user': current_user,
-        'SITE': SITE,
-        'DESCRIPTION': DESCRIPTION,
-    }
-    return render_template('readme.html', **context)
-
-
 @app.route('/status')
 def show_status():
 
@@ -274,25 +262,6 @@ def get_display_response(enabled, created):
     }
 
     return response
-
-
-def render_readme():
-    """ Render the README file as a template file. """
-
-    with open(join(HERE, 'README.md')) as f:
-        with open(join(HERE, 'templates', 'readme.html'), 'w') as g:
-            g.write(
-                dedent(
-                    """{%% extends 'base.html' %%}
-
-                    {%% block content %%}
-
-                    %(README)s
-
-                    {%% endblock %%}
-                    """
-                ) % {'README': markdown(f.read())}
-            )
 
 
 #### Standalone ###############################################################

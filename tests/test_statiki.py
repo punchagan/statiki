@@ -28,23 +28,10 @@ class TestStatiki(unittest.TestCase):
         )
         statiki.app.config['TESTING'] = True
         statiki.db.create_all()
-        statiki.render_readme()
         self.app = statiki.app.test_client()
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
-
-    def test_render_readme(self):
-        # Given
-        readme = join(abspath(statiki.app.template_folder), 'readme.html')
-        if exists(readme):
-            os.unlink(readme)
-
-        # When
-        self.app.get('/readme')
-
-        # Then
-        self.assertTrue(exists(readme))
 
     def test_should_create_travis_files(self):
         # Given

@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/punchagan/statiki.png?branch=master)](https://travis-ci.org/punchagan/statiki)
-[![Coverage Status](https://coveralls.io/repos/punchagan/statiki/badge.png)](https://coveralls.io/r/punchagan/statiki)
+[![Coverage Status](https://coveralls.io/repos/punchagan/statiki/badge.png?branch=master)](https://coveralls.io/r/punchagan/statiki?branch=master)
 
 statiki
 =======

@@ -219,6 +219,20 @@ def show_readme():
     return render_template('readme.html', **context)
 
 
+@app.route('/status')
+def show_status():
+
+    context = {
+        'user': current_user,
+        'SITE': SITE,
+        'DESCRIPTION': DESCRIPTION,
+        'GITHUB_STATUS': GitHubUtils.get_status(),
+        'TRAVIS_STATUS': TravisUtils.get_status(),
+    }
+
+    return render_template('status.html', **context)
+
+
 #### Helper functions #########################################################
 
 def create_travis_files(full_name, github_token):

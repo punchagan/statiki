@@ -90,6 +90,15 @@ class TravisUtils(object):
         return contents % {'REPO': full_name}
 
     @staticmethod
+    def get_status():
+        """ Return the server status of GitHub. """
+
+        response = requests.get('http://status.travis-ci.com')
+        pattern  = '(<div.*?class="page-status.*".*>((.|\s)*?)</div>)'
+
+        return re.findall(pattern, response.text)[0][1].strip()
+
+    @staticmethod
     def get_yaml_contents(full_name, github_token):
         """ Get the contents to be dumped into .travis.yml. """
 

@@ -193,6 +193,13 @@ class TestStatiki(unittest.TestCase):
         # Then
         self.assertEqual(200, response.status_code)
 
+    def test_should_get_status(self):
+        # When
+        response = self.app.get('/status')
+
+        # Then
+        self.assertIn('GitHub Status', response.data)
+        self.assertIn('Travis Status', response.data)
 
     #### Private protocol #####################################################
 

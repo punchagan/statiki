@@ -165,3 +165,8 @@ class TestTravisUtils(unittest.TestCase):
 
         # Then
         self.assertFalse(synced)
+
+    def test_should_get_status(self):
+        self.assertIn(
+            'all systems operational', TravisUtils.get_status().lower()
+        )

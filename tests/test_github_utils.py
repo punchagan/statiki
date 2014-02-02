@@ -94,6 +94,11 @@ class TestGitHubUtils(unittest.TestCase):
             GitHubUtils.create_new_repository(THIS_REPO, GH_TOKEN)
         )
 
+    def test_should_get_status(self):
+        self.assertIn(
+            'all systems operational', GitHubUtils.get_status().lower()
+        )
+
     #### Private protocol #####################################################
 
     def _get_random_string(self, length=40):

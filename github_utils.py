@@ -3,6 +3,7 @@
 # Standard library
 import base64
 import json
+import re
 
 # 3rd party library
 import requests
@@ -93,6 +94,15 @@ class GitHubUtils(object):
             'Authorization': 'token %s' % token,
             'Content-Type': 'application/json'
         }
+
+    @staticmethod
+    def get_status():
+        """ Return the server status of GitHub. """
+
+        response = requests.get('https://status.github.com')
+        pattern  = '(<div.*?id="message".*>(.|\s)*?</div>)'
+
+        return re.findall(pattern, response.text)[0][0].strip()
 
     @staticmethod
     def get_user_and_repo(full_name, token):

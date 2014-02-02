@@ -60,13 +60,12 @@ Runs at [http://statiki.muse-amuse.in](http://statiki.muse-amuse.in)
 
 ### TO-DO ###
 
-1. Add javascript tests
 1. Redirect to the newly created site on success, or atleast display link
 1. Allow repos in organizations
-1. Add tests for the bash script.
 1. Clean-up the README added to the sites. Add a build status on the README!
 1. See if Travis signup can be automated.
 1. Display the above how-to steps, elegantly on the site!
 1. Check timezone related issues?  For now, enable FUTURE_IS_NOW!
 1. Add a FAQ with links to GH pages, Travis CI docs. (CNAME, [skip ci], etc.)
-1. Add a status page that aggregates GH & Travis's status. ;)
+1. Add javascript tests?
+1. Add tests for the bash script?

@@ -1,5 +1,5 @@
 -r requirements.txt
 nose
-mock
-coverage
-python-coveralls
+pytest
+pytest-cov
+coveralls

@@ -11,4 +11,5 @@ execfile(activate_this, dict(__file__=activate_this))
 HERE = dirname(abspath(__file__))
 sys.path.insert(0, HERE)
 
-from statiki import app as application
+from statiki import db, app as application
+db.create_all()

@@ -26,6 +26,8 @@ import rsa
 
 # Local library.
 import messages
+from github_utils import GitHubUtils
+from travis_utils import TravisUtils
 
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 SCRIPT = 'travis_build_n_deploy.sh'
@@ -36,27 +38,13 @@ DESCRIPTION = 'An easy-to-use service for deploying simple web-sites'
 
 # Flask setup
 app = Flask(__name__)
-if exists(join(HERE, 'settings.py')):
-    path = join(HERE, 'settings.py')
-else:
-    path = join(HERE, 'sample-settings.py')
-app.config.from_pyfile(path)
+settings_path = join(HERE, 'settings.py')
+settings_path = (
+    join(HERE, 'sample-settings.py') if not exists(settings_path)
+    else settings_path
+)
+app.config.from_pyfile(settings_path)
 db = SQLAlchemy(app)
-
-# Logging setup
-if not app.config.get('DEBUG', False):
-    formatter = logging.Formatter(
-        '[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s'
-    )
-    handler = RotatingFileHandler(
-        app.config['LOG_FILENAME'], maxBytes=10000000, backupCount=5
-    )
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(formatter)
-    log = logging.getLogger('werkzeug')
-    log.setLevel(logging.DEBUG)
-    log.addHandler(handler)
-    app.logger.addHandler(handler)
 
 # Login related
 login_manager = LoginManager()
@@ -85,7 +73,7 @@ def travis_login_required(func):
 
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        travis_token = is_travis_user(current_user.github_token)
+        travis_token = TravisUtils.is_travis_user(current_user.github_token)
         if travis_token is None:
             return jsonify(dict(message=messages.NO_TRAVIS_ACCOUNT))
         else:
@@ -111,12 +99,10 @@ class User(db.Model, UserMixin):
         return '<User %r>' % self.username
 
     def set_github_token(self, github_token):
-        app.logger.info('Setting github token for %s', self.username)
         self.github_token = github_token
         db.session.commit()
 
     def set_travis_token(self, travis_token):
-        app.logger.info('Setting travis token for %s', self.username)
         self.travis_token = travis_token
         db.session.commit()
 
@@ -170,7 +156,6 @@ def authorized():
     user_obj = User.get_or_create(user['login'], user['id'])
     user_obj.set_github_token(session.access_token)
     login_user(user_obj)
-    app.logger.info('Logged in user %s', user_obj.username)
 
     return redirect(url_for('index'))
 
@@ -189,7 +174,6 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
-    app.logger.info('Logging out user %s', current_user.username)
     logout_user()
     return redirect(url_for('index'))
 
@@ -209,27 +193,23 @@ def manage():
         return jsonify(dict(message=message))
 
     # If repo does not exist, create it.
-    if not is_valid_repo(full_name):
-        app.logger.info('Creating new repository %s', full_name)
-        create_new_repository(full_name, github_token)
-        app.logger.info('Created repository %s', full_name)
+    if not GitHubUtils.is_valid_repository(full_name):
+        GitHubUtils.create_new_repository(full_name, github_token)
 
     # If repo not listed in travis, sync
-    repo_id = get_repo_id(full_name, travis_token)
+    repo_id = TravisUtils.get_repo_id(full_name, travis_token)
     if repo_id is None:
-        app.logger.info('Repo id for %s is None. Syncing', full_name)
-        sync_travis_with_github(travis_token)
-        repo_id = get_repo_id(full_name, travis_token)
+        TravisUtils.sync_with_github(travis_token)
+        repo_id = TravisUtils.get_repo_id(full_name, travis_token)
 
     if repo_id is None:
-        app.logger.info('Repo %s could not be found.', full_name)
         message = messages.NO_SUCH_REPO_FOUND
         return jsonify(dict(message=message))
 
-    enabled = enable_ci_for_repo(repo_id, travis_token)
+    enabled = TravisUtils.enable_hook(repo_id, travis_token)
     created = create_travis_files(full_name, github_token)
 
-    response = get_user_response(enabled, created)
+    response = get_display_response(enabled, created)
     response['message'] %= dict(USER=current_user.username, REPO=full_name)
     return jsonify(response)
 
@@ -243,206 +223,25 @@ def update_readme():
 
 #### Helper functions #########################################################
 
-def commit_to_github(path, content, repo, github_token):
-    """ Commit the given content to the given path in a repository. """
-
-    url = 'repos/%s/contents/%s' % (repo, path)
-    url = 'https://api.github.com/' + url
-
-    headers = {
-        'Authorization': 'token %s' % github_token,
-        'Content-Type': 'application/json'
-    }
-
-    payload = {
-        'path': path,
-        'message': 'Adding %s (from statiki).' % path,
-        'content': base64.standard_b64encode(content),
-    }
-    app.logger.info('Committing file %s to %s', path, repo)
-    response = requests.put(url, data=json.dumps(payload), headers=headers)
-    app.logger.info(
-        'Commit file request: %s, %s', response.status_code, response.text
-    )
-
-    return response.status_code == 201
-
-
-def create_new_repository(repo, github_token):
-    """ Create a new repository given the name and a token.
-
-    NOTE the token must have 'repo' scope, not just 'public_repo'.
-
-    """
-
-    user, user_type, name = get_user_and_repo(repo)
-
-    url = 'https://api.github.com/user/repos'
-
-    headers = {
-        'Authorization': 'token %s' % github_token,
-        'Content-Type': 'application/json'
-    }
-
-    payload = {
-        'name': name,
-        'description': 'Website using Nikola, created from statiki',
-        'homepage': 'https://%s.github.io/%s' % (user, name),
-        'private': False,
-        'has_issues': False,
-        'has_wiki': False,
-        'has_downloads': False,
-    }
-
-    app.logger.info('Creating new repo: %s', repo)
-    response = requests.post(url, data=json.dumps(payload), headers=headers)
-    app.logger.info(
-        'Create new repo: %s, %s', response.status_code, response.text
-    )
-
-    return response.status_code == 201
-
-
-def create_travis_files(repo, github_token):
+def create_travis_files(full_name, github_token):
     """ Create the files required for Travis CI hooks to work. """
 
-    created = {}
+    created      = {}
 
-    # Create travis script file
-    content = get_travis_script_file_contents(repo)
-    name    = SCRIPT
-    created[name] = (
-        commit_to_github(name, content, repo, github_token)
-        if not github_path_exists(repo, name) else False
-    )
+    travis_files = [
+        (SCRIPT, TravisUtils.get_script_contents(full_name)),
+        ('.travis.yml', TravisUtils.get_yaml_contents(full_name, github_token))
+    ]
 
-    # Create .travis.yml
-    content = get_travis_config_contents(repo, github_token)
-    name    = '.travis.yml'
-    created[name] = (
-        commit_to_github(name, content, repo, github_token)
-        if not github_path_exists(repo, name) else False
-    )
+    for name, content in travis_files:
+        created[name] = GitHubUtils.commit(
+            name, content, full_name, github_token
+        )
 
     return created
 
 
-def enable_ci_for_repo(repo_id, travis_token):
-    """ Enable the travis hook for the repository with the given id. """
-
-    if travis_token is None:
-        status = False
-
-    else:
-        payload = json.dumps(dict(hook=dict(active=True, id=repo_id)))
-        headers = {
-            'Authorization': 'token %s' % travis_token,
-            'Content-Type': 'application/json; charset=UTF-8'
-        }
-
-        url = 'https://api.travis-ci.org/hooks/%s' % repo_id
-        app.logger.info('Enabling CI for %s', repo_id)
-        response = requests.put(url, data=payload,  headers=headers)
-        app.logger.info(
-            'Enabling CI: %s, %s', response.status_code, response.text
-        )
-        status = response.status_code == 200
-
-    return status
-
-
-def get_encrypted_text(repo_name, data):
-    """ Return encrypted text for the data. """
-
-    public_key = get_travis_public_key(repo_name)
-    key = rsa.PublicKey.load_pkcs1_openssl_pem(public_key)
-    secure = base64.encodestring(rsa.encrypt(data, key))
-    secure, _ = re.subn('\s+', '', secure)
-
-    return secure
-
-
-def get_repo_id(repo, travis_token):
-    """ Get the id for a repository from travis. """
-
-    if travis_hook_exists(repo, travis_token):
-        url      = 'https://api.travis-ci.org/repos/%s' % repo
-        response = requests.get(url).json()
-        repo_id = response.get('id')
-
-    else:
-        repo_id = None
-
-    return repo_id
-
-
-def get_travis_access_token(github_token):
-
-    url = 'https://api.travis-ci.org/auth/github'
-    data = {'github_token': github_token}
-
-    app.logger.info('Getting github_token')
-    return requests.post(url, data=data).json().get('github_token')
-
-
-def get_travis_config_contents(repo, github_token):
-    """ Get the contents to be dumped into the travis config. """
-
-    data = 'github_token=%s GIT_NAME=%s GIT_EMAIL=%s' % (
-        github_token.encode(), 'Travis CI', 'testing@travis-ci.org'
-    )
-    secure = get_encrypted_text(repo, data)
-
-    config = {
-        'env': {'global': {'secure': secure}},
-        'before_install': 'sudo apt-get install -qq python-lxml',
-        'install': 'pip install nikola webassets',
-        'branches': {'only': ['master']},
-        'language': 'python',
-        'python': ['2.7'],
-        'script': 'bash %s' % SCRIPT,
-        'virtualenv': {'system_site_packages': True},
-    }
-
-    return yaml.dump(config)
-
-
-def get_travis_script_file_contents(repo):
-    """ Get the contents of the script file to be run on travis. """
-
-    template = join(dirname(__file__), 'utils', 'travis_script_template.sh')
-    with open(template) as f:
-        contents = f.read()
-
-    return contents % {'REPO': repo}
-
-
-def get_travis_public_key(repo):
-    """ Get a public key for the repository from travis. """
-
-    url = 'https://api.travis-ci.org/repos/%s' % repo
-    response = requests.get(url)
-    app.logger.info('Getting travis public key for %s', repo)
-
-    return response.json()['public_key'].replace('RSA PUBLIC', 'PUBLIC')
-
-
-def get_user_and_repo(repo):
-    """ Given <user>/<repo-name> return (username, user_type, repo).
-
-    user_type is one of User or Organization.
-
-    """
-
-    user, name = repo.split('/')
-    response = requests.get('https://api.github.com/users/%s' % user)
-
-    user_type = response.json()['type']
-
-    return user, user_type, name
-
-
-def get_user_response(enabled, created):
+def get_display_response(enabled, created):
     """ Return the response for the user, based on enabled and created. """
 
     if enabled and all(created.values()):
@@ -465,50 +264,6 @@ def get_user_response(enabled, created):
     return response
 
 
-def github_path_exists(repo, path):
-    """ Return True if the given repository has the given path. """
-
-    #fixme: make this an authenticated request.
-
-    url = 'repos/%s/contents/%s' % (repo, path)
-    url = 'https://api.github.com/' + url
-
-    return requests.get(url).status_code == 200
-
-
-def is_travis_user(github_token):
-    """ Check if a user is a Travis user.
-
-    Return the travis token if so, else None.
-
-    """
-
-    travis_token = get_travis_access_token(github_token)
-    headers      = {
-        'Authorization': 'token %s' % travis_token,
-        'Content-Type': 'application/json; charset=UTF-8'
-    }
-
-    app.logger.info('Checking if current user is a travis user')
-    response = requests.get(
-        'https://api.travis-ci.org/users/', headers=headers
-    )
-
-    if response.status_code == 200:
-        synced_at = response.json().get('synced_at')
-    else:
-        synced_at = None
-
-    return travis_token if synced_at is not None else None
-
-
-def is_valid_repo(repo):
-    """ Return True if such a repo exists on GitHub. """
-
-    response = requests.get('https://github.com/%s' % repo)
-    return response.status_code == 200
-
-
 def render_readme():
     """ Render the README file as a template file. """
 
@@ -517,70 +272,6 @@ def render_readme():
             readme = markdown(f.read())
             g.write(readme)
 
-
-def sync_travis_with_github(traivs_token):
-    """ Sync the repositories of the user on Travis from GitHub. """
-
-    headers  = {
-        'Authorization': 'token %s' % traivs_token,
-        'Content-Type': 'application/json; charset=UTF-8'
-    }
-    response = requests.post(
-        'http://api.travis-ci.org/users/sync', headers=headers
-    )
-
-    if response.status_code == 200 and response.json()['result']:
-        # fixme: this is very ugly!
-        synced = wait_until_sync_finishes(headers)
-    else:
-        synced = False
-
-    return synced
-
-
-def travis_hook_exists(full_name, travis_token):
-    """ Return True if a hook for the repository is listed on travis. """
-
-    headers  = {
-        'Authorization': 'token %s' % travis_token,
-        'Content-Type': 'application/json; charset=UTF-8'
-    }
-    response = requests.get('http://api.travis-ci.org/hooks', headers=headers)
-    owner, name = full_name.split('/')
-    if response.status_code == 200:
-        repos = [
-            repo for repo in response.json()
-            if repo['name'] == name and repo['owner_name'] == owner
-        ]
-        hook_exists = len(repos) > 0
-
-    else:
-        hook_exists = False
-
-    return hook_exists
-
-
-def wait_until_sync_finishes(headers):
-    """ Wait until a sync finishes. """
-
-    count = 0
-
-    while count < 50:
-        count += 1
-        response = requests.get(
-            'http://api.travis-ci.org/users/', headers=headers
-        )
-
-        if response.status_code != 200:
-            status = False
-            break
-        elif response.json()['is_syncing']:
-            status = False
-        else:
-            status = True
-            break
-
-    return status
 
 #### Standalone ###############################################################
 

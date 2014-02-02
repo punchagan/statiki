@@ -5,6 +5,7 @@ import unittest
 from travis_utils import TravisUtils
 import yaml
 
+
 def get_gh_token(bogus):
     """ Returns the GH token to use. """
     # fixme: Change this to check if we are rate limited, an use BOGUS if so.

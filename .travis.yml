@@ -2,7 +2,7 @@ language: python
 install: pip install -r requirements-test.txt
 python:
 - '2.7'
-script: nosetests --with-coverage --cover-package=statiki tests/
+script: nosetests --with-coverage --cover-package=travis_utils --cover-package=github_utils tests/
 env:
   global:
     secure: XxLhvogFDQ/TkUWMcj6J2W6yL0L0Zj2Pisq2+xwInG78GrizXQJkuXgvtyams8GI/KXew/Y5YbGkiR+395V8YTL7gF5SFtvb/YUBXCl00LsxBJe9ZYZKboN5wPWERgaunypTvHVAObBHS7Zmmu21GcOqCkZMIUsqPQNLXZTj7IQ=

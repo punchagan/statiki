@@ -1,14 +1,8 @@
 """ A web app to automate build and deployment of static sites on GitHub. """
 
 # Standard library.
-import base64
 from functools import wraps
-import json
-import logging
-from logging.handlers import RotatingFileHandler
 from os.path import abspath, dirname, exists, join
-import re
-import yaml
 
 # 3rd party library.
 from flask import (
@@ -21,8 +15,6 @@ from flask_login import (
 from flask_sqlalchemy import SQLAlchemy
 from markdown import markdown
 from rauth.service import OAuth2Service
-import requests
-import rsa
 
 # Local library.
 import messages

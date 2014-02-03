@@ -234,6 +234,11 @@ color: #333333;
   margin-right: 7px;
 }
 
+.content {
+    margin: 60px auto; /* Go below the header menu. */
+    width: 50%;
+}
+
 /* This is the class used for the dark-background areas. */
 
 .ribbon {

@@ -220,8 +220,8 @@ color: #333333;
     }
 
 .content {
-    margin-top: 60px; /* Go below the header menu. */
-    margin-bottom: 60px;
+    margin: 60px auto; /* Go below the header menu. */
+    width: 50%;
 }
 
 /* This is the class used for the dark-background areas. */

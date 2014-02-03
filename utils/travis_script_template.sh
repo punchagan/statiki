@@ -68,7 +68,7 @@ function fix_nikola_config(){
 
     GH_USER=`echo $REPO | cut -d "/" -f 1`
     REPO_NAME=`echo $REPO | cut -d "/" -f 2`
-    sed -i 's%^SITE_URL.*%SITE_URL = "https://'$GH_USER'.github.io/'$REPO_NAME'"%g' conf.py
+    sed -i 's%^SITE_URL.*%SITE_URL = "http://'$GH_USER'.github.io/'$REPO_NAME'"%g' conf.py
 
 }
 

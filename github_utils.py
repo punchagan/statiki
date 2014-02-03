@@ -60,7 +60,7 @@ class GitHubUtils(object):
             payload = {
                 'name': name,
                 'description': 'Website using Nikola, created from statiki',
-                'homepage': 'https://%s.github.io/%s' % (user, name),
+                'homepage': 'http://%s.github.io/%s' % (user, name),
                 'private': False,
                 'has_issues': False,
                 'has_wiki': False,

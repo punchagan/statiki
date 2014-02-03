@@ -231,7 +231,12 @@ def create_travis_files(full_name, github_token):
 
     travis_files = [
         (SCRIPT, TravisUtils.get_script_contents(full_name)),
-        ('.travis.yml', TravisUtils.get_yaml_contents(full_name, github_token))
+        (
+            '.travis.yml',
+            TravisUtils.get_yaml_contents(
+                full_name, github_token
+            ) % dict(SCRIPT=SCRIPT)
+        )
     ]
 
     for name, content in travis_files:

@@ -35,17 +35,20 @@ class TestStatiki(unittest.TestCase):
 
     def test_should_create_travis_files(self):
         # Given
-        expected ={
+        expected = {
             statiki.SCRIPT: True,
             '.travis.yml': True
         }
+        true = Mock(return_value=True)
 
         # When
-        with patch('github_utils.GitHubUtils.commit', Mock(return_value=True)):
+        with patch('github_utils.GitHubUtils.commit', true) as commit:
             created = statiki.create_travis_files(THIS_REPO, GH_TOKEN)
 
         # Then
+        args, _ = commit.call_args
         self.assertDictEqual(expected, created)
+        self.assertIn(statiki.SCRIPT, args[1])
 
     def test_should_show_success(self):
         # Given

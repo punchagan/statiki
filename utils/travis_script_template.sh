@@ -62,6 +62,16 @@ function git_create_gh_pages() {
     git checkout --orphan gh-pages
 }
 
+# Fix the config file
+# In future, should let users choose an theme, etc!
+function fix_nikola_config(){
+
+    GH_USER=`echo $REPO | cut -d "/" -f 1`
+    REPO_NAME=`echo $REPO | cut -d "/" -f 2`
+    sed -i 's%^SITE_URL.*%SITE_URL = "https://'$GH_USER'.github.io/'$REPO_NAME'"%g' conf.py
+
+}
+
 # Initialize site using nikola's sample site
 function initialize_site() {
 
@@ -69,6 +79,7 @@ function initialize_site() {
     nikola init --demo demo
     mv demo/* .
     touch files/.nojekyll
+    fix_nikola_config
     git_commit_all
     git_push_silent master
 

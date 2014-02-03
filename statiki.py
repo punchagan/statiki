@@ -3,7 +3,6 @@
 # Standard library.
 from functools import wraps
 from os.path import abspath, dirname, exists, join
-from textwrap import dedent
 
 # 3rd party library.
 from flask import (
@@ -14,7 +13,6 @@ from flask_login import (
     UserMixin
 )
 from flask_sqlalchemy import SQLAlchemy
-from markdown import markdown
 from rauth.service import OAuth2Service
 
 # Local library.

@@ -22,38 +22,13 @@ pages.
 The name statiki is combination of static (from static-sites) and iki
 (a Japanese aesthetic ideal that roughly means chic, stylish)
 
-## How-to use statiki ##
-
-1. Create an account on GitHub, if you don't have one.
-2. Login/sign up on statiki's home page.
-3. Sign-up to travis-ci using your GitHub credentials
-4. Choose one of the following urls for create your site::
-
-    `http://<username>.github.io` OR `http://<username>.github.io/<reponame>`
-
-5. Click Go!
-
-    statiki will create the appropriate repositories in your GitHub
-    account.  It uses Nikola by default to create your site.
-
-    To configure your site, click on the advanced button.  You can
-    choose the static site generator to use, and make any changes to
-    the configuration, etc.
-
-6. Get redirected to the newly created site!
-
-    This may take a while to be created.
-
-7. All future posts can be made using GitHub's UI, or something like
-   prose.io or simply using git!.
-
 ## Current Status ##
 
 Currently, `statiki` can only enable automatic publishing for URLs like
 `http://<username>.github.io/<reponame>`.  Existing repositories,
 can also be managed by statiki (if they don't already have a .travis.yml file)
 
-Statiki initialized a demo nikola site (checks for conf.py if the repository
+Statiki initializes a demo nikola site (checks for conf.py if the repository
 is an old, existing one), and publishes the output.
 
 Runs at [http://statiki.muse-amuse.in](http://statiki.muse-amuse.in)
@@ -64,7 +39,6 @@ Runs at [http://statiki.muse-amuse.in](http://statiki.muse-amuse.in)
 1. Allow repos in organizations
 1. Clean-up the README added to the sites. Add a build status on the README!
 1. See if Travis signup can be automated.
-1. Display the above how-to steps, elegantly on the site!
 1. Check timezone related issues?  For now, enable FUTURE_IS_NOW!
 1. Add a FAQ with links to GH pages, Travis CI docs. (CNAME, [skip ci], etc.)
 1. Add javascript tests?

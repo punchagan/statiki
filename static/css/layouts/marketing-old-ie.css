@@ -153,7 +153,7 @@ color: #333333;
   overflow: hidden;
   /* The following styles are required for the "scroll-over" effect */
   width: 100%;
-  height: 88%;
+  height: 60%;
   top: 0;
   left: 0;
   position: fixed !important;
@@ -202,7 +202,7 @@ color: #333333;
 .content-wrapper {
   /* These styles are required for the "scroll-over" effect */
   position: absolute;
-  top: 87%;
+  top: 59%;
   width: 100%;
   min-height: 12%;
   z-index: 2;
@@ -292,7 +292,7 @@ body {
 
 .splash {
   width: 50%;
-  height: 50%;
+  height: 60%;
 }
 
 .splash-head {
@@ -303,6 +303,47 @@ body {
 
 .l-box-lrg {
   border: none;
+}
+
+/* All things tutorial related */
+
+.tutorial {
+    text-align: center;
+}
+
+.tutorial a {
+    text-decoration: none;
+}
+
+.tutorial i {
+    font-size: 200%;
+}
+
+.tutorial-intro{
+    width: 100%;
+    margin: auto;
+    padding: 0 10%;
+    text-align: center;
+    line-height: 200%
+
+}
+
+.tutorial-heading{
+    text-align: center;
+    font-size: 200%;
+    line-height: 400%;
+}
+
+.tutorial .step {
+     border: 2px solid #ccc;
+     min-height: 8em;
+     margin: 2em 0;
+     padding: 2em 2em;
+
+}
+
+.tutorial .step span{
+     font-size: 150%;
 }
 
 /*

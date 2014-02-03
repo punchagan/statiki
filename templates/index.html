@@ -1,8 +1,85 @@
 {% extends 'base.html' %}
 
 {% block content %}
-This site is a work in progress, though some stuff works.
-See <a href="//github.com/punchagan/statiki" class="pure-button">README</a> for details
+
+
+
+<div class="tutorial">
+
+    <div class="tutorial-intro">
+        <h1>Statiki is simple way to create and/or manage a website or blog.</h1>
+        <h2>Statiki leverages free and open services and software like GitHub, TravisCI and Nikola.<h2>
+    </div>
+
+    <div class="tutorial-heading">How do I get started?</div>
+
+    <div class="step">
+        <span>Create an account on <a href="https://github.com/join" target="_blank">GitHub</a> </span>
+        <p>
+            If you already have one, signup.  Statiki will uses GitHub OAuth to authenticate.
+        </p>
+    </div>
+
+    <i class="fa fa-arrow-down"></i>
+
+    <div class="step">
+        <span>Create an account on <a href="https://travis-ci.org/profile" target="_blank">TravisCI</a> </span>
+        <p>
+            TravisCI also uses GitHub OAuth.  Once you create your account, wait for Travis to sync
+            your repositories from GitHub
+        </p>
+    </div>
+
+    <i class="fa fa-arrow-down"></i>
+
+    <div class="step">
+        <span>Create an account on <a href="{{ url_for('login') }}" target="_blank">Statiki</a></span>
+        <p>
+            Statiki uses GitHub OAuth.  Statiki only uses your authentication to manage the repositories
+            you specify.  Once Statiki sets up your repository, with the required files, and the hook
+            on TravisCI, you can even revoke access to Statiki.
+        </p>
+    </div>
+
+    <i class="fa fa-arrow-down"></i>
+
+    <div class="step">
+        <span>Choose a URL for your site and hit Go!</span>
+        <p>
+            Currently, only urls of the type <code>http://&lt;your-username&gt;.github.io/&lt;choosen-name&gt;</code>
+            are supported by Statiki. In future Statiki, will be able to let you use just <code>http://&lt;your-username&gt;.github.io/&gt;</code>
+        </p>
+    </div>
+
+    <i class="fa fa-arrow-down"></i>
+
+    <div class="step">
+        <span>Profit!</span>
+        <p> Your site should be ready in a few minutes. </p>
+
+        <p>
+            You'll get an email from GitHub to notify you of the same!
+            (Actual time depends on the availability of TravisCI and how long
+            GitHub takes to deploy your pages.)
+            You can edit your site either using GitHub's web editor, or
+            edit locally using your favorite editor and pushing changes to
+            your git repository!
+        </p>
+    </div>
+
+    <i class="fa fa-arrow-down"></i>
+
+    <p>
+        <a href="{{ url_for('login') }}" class="pure-button">Get Started</a>
+    </p>
+
+    <span class="pure-u">
+        Report any issues to <a href="twitter.com/punchagan">@punchagan</a> on
+        <a href="github.com/punchagan/statiki/issues">GitHub</a>.
+    </span>
+
+</div>
+
 {% endblock %}
 
 {% block content_wrapper %}

@@ -35,8 +35,8 @@ Runs at [http://statiki.muse-amuse.in](http://statiki.muse-amuse.in)
 
 ### TO-DO ###
 
-1. Redirect to the newly created site on success, or atleast display link
 1. Allow repos in organizations
+1. Allow user/organization pages
 1. Clean-up the README added to the sites. Add a build status on the README!
 1. See if Travis signup can be automated.
 1. Check timezone related issues?  For now, enable FUTURE_IS_NOW!

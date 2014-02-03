@@ -63,7 +63,7 @@ def create_travis_config(path, repo):
         'env': {'global': {'secure': secure}},
         'install': ['wget https://github.com/getnikola/wheelhouse/archive/v2.7.zip', 'unzip v2.7.zip',
                     'pip install --use-wheel --no-index --find-links=wheelhouse-2.7 lxml Pillow',
-                    'pip install nikola webassets'],
+                    'rm -rf wheelhouse-2.7', 'pip install nikola webassets'],
         'branches': {'only': ['master']},
         'language': 'python',
         'python': ['2.7'],

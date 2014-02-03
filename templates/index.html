@@ -16,7 +16,7 @@
     <div class="step">
         <span>Create an account on <a href="https://github.com/join" target="_blank">GitHub</a> </span>
         <p>
-            If you already have one, signup.  Statiki will uses GitHub OAuth to authenticate.
+            If you already have one, login.  Statiki will uses GitHub OAuth to authenticate.
         </p>
     </div>
 
@@ -48,6 +48,7 @@
         <p>
             Currently, only urls of the type <code>http://&lt;your-username&gt;.github.io/&lt;choosen-name&gt;</code>
             are supported by Statiki. In future Statiki, will be able to let you use just <code>http://&lt;your-username&gt;.github.io/&gt;</code>
+            RSS feeds/Galleries may not work correctly, due to an issue in Nikola.
         </p>
     </div>
 
@@ -58,7 +59,7 @@
         <p> Your site should be ready in a few minutes. </p>
 
         <p>
-            You'll get an email from GitHub to notify you of the same!
+            You'll get a notifiation email from GitHub!
             (Actual time depends on the availability of TravisCI and how long
             GitHub takes to deploy your pages.)
             You can edit your site either using GitHub's web editor, or
@@ -66,8 +67,6 @@
             your git repository!
         </p>
     </div>
-
-    <i class="fa fa-arrow-down"></i>
 
     <p>
         <a href="{{ url_for('login') }}" class="pure-button">Get Started</a>

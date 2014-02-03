@@ -37,6 +37,8 @@ Runs at [http://statiki.muse-amuse.in](http://statiki.muse-amuse.in)
 
 1. Allow repos in organizations
 1. Allow user/organization pages
+1. Allow plugin and theme installation
+1. Fix RSS issues when deploying to subdirs or work around it
 1. Clean-up the README added to the sites. Add a build status on the README!
 1. See if Travis signup can be automated.
 1. Check timezone related issues?  For now, enable FUTURE_IS_NOW!

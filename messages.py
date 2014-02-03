@@ -23,8 +23,9 @@ NO_TRAVIS_ACCOUNT = (
 ONLY_HOOKS_ENABLED = (
     'Only the travis ci integration was successfully completed.  Creation of '
     '.travis.yml and travis_build_n_deploy.sh failed.  Do they already exist?'
-    'If so, your site should be published in a few minutes.  Otherwise, try'
-    'submitting your request, again. If not, contact us!'
+    'If so, your site should be published in a few minutes to'
+    'http://%(USER)s.github.io/%(REPO)s">http://%(USER)s.github.io/%(REPO)s'
+    'Otherwise, try submitting your request, again or contact us!'
 )
 
 TOTAL_FAILURE = (

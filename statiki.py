@@ -201,7 +201,10 @@ def manage():
     created = create_travis_files(full_name, github_token)
 
     response = get_display_response(enabled, created)
-    response['message'] %= dict(USER=current_user.username, REPO=full_name)
+    response['message'] %= dict(
+        USER=current_user.username,
+        REPO=repo_name,
+    )
     return jsonify(response)
 
 

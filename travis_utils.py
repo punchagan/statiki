@@ -102,7 +102,7 @@ class TravisUtils(object):
     def get_yaml_contents(full_name, github_token):
         """ Get the contents to be dumped into .travis.yml. """
 
-        data   = 'github_token=%s GIT_NAME=%s GIT_EMAIL=%s' % (
+        data   = 'GITHUB_TOKEN=%s GIT_NAME=%s GIT_EMAIL=%s' % (
             github_token.encode(), 'Travis CI', 'testing@travis-ci.org'
         )
         secure = TravisUtils.get_encrypted_text(full_name, data)

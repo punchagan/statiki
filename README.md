@@ -31,7 +31,7 @@ can also be managed by statiki (if they don't already have a .travis.yml file)
 Statiki initializes a demo nikola site (checks for conf.py if the repository
 is an old, existing one), and publishes the output.
 
-Runs at [http://statiki.muse-amuse.in](http://statiki.muse-amuse.in)
+Runs at [http://statiki.herokuapp.com](http://statiki.herokuapp.com)
 
 ### TO-DO ###
 

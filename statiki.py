@@ -30,10 +30,6 @@ DESCRIPTION = 'An easy-to-use service for deploying simple web-sites'
 # Flask setup
 app = Flask(__name__)
 settings_path = join(HERE, 'settings.py')
-settings_path = (
-    join(HERE, 'sample-settings.py') if not exists(settings_path)
-    else settings_path
-)
 app.config.from_pyfile(settings_path)
 db = SQLAlchemy(app)
 

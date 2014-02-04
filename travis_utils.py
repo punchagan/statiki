@@ -106,15 +106,20 @@ class TravisUtils(object):
             github_token.encode(), 'Travis CI', 'testing@travis-ci.org'
         )
         secure = TravisUtils.get_encrypted_text(full_name, data)
+
         config = {
             'env': {'global': {'secure': secure}},
-            'before_install': 'sudo apt-get install -qq python-lxml',
-            'install': 'pip install nikola webassets',
+            'install': [
+                'wget https://github.com/getnikola/wheelhouse/archive/v2.7.zip',
+                'unzip v2.7.zip',
+                'pip install --use-wheel --no-index --find-links=wheelhouse-2.7 lxml Pillow',
+                'rm -rf wheelhouse-2.7 v2.7.zip',
+                'pip install nikola webassets',
+            ],
             'branches': {'only': ['master']},
             'language': 'python',
             'python': ['2.7'],
             'script': 'bash %(SCRIPT)s',
-            'virtualenv': {'system_site_packages': True},
         }
 
         return yaml.dump(config)

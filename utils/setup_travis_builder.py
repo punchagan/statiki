@@ -1,5 +1,8 @@
 """ A command line tool to automate everything for an existing repo.
 
+NOTE: This is a standalone script for those who do not wish to use the
+web-service.  This script may be out-dated, too!
+
 This script adds and/or tweaks a .travis.yml file and an additional script
 to deploy using travis-ci to gh-pages branch on GitHub.
 

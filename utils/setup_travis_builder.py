@@ -61,14 +61,17 @@ def create_travis_config(path, repo):
 
     config = {
         'env': {'global': {'secure': secure}},
-        'install': ['wget https://github.com/getnikola/wheelhouse/archive/v2.7.zip', 'unzip v2.7.zip',
-                    'pip install --use-wheel --no-index --find-links=wheelhouse-2.7 lxml Pillow',
-                    'rm -rf wheelhouse-2.7', 'pip install nikola webassets'],
+        'install': [
+                'wget https://github.com/getnikola/wheelhouse/archive/v2.7.zip',
+                'unzip v2.7.zip',
+                'pip install --use-wheel --no-index --find-links=wheelhouse-2.7 lxml Pillow',
+                'rm -rf wheelhouse-2.7 v2.7.zip',
+                'pip install nikola webassets',
+        ],
         'branches': {'only': ['master']},
         'language': 'python',
         'python': ['2.7'],
         'script': SCRIPT,
-        'virtualenv': {'system_site_packages': True},
     }
 
     with open(travis_yml, 'w') as f:

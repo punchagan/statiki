@@ -1,0 +1,7 @@
+markdown
+flask
+rauth
+flask-sqlalchemy
+flask-login
+pyyaml
+rsa

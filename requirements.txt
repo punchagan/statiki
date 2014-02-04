@@ -1,7 +1,4 @@
-markdown
-flask
-rauth
-flask-sqlalchemy
-flask-login
-pyyaml
-rsa
+-r requirements-base.txt
+# for deployment
+gunicorn
+psycopg2

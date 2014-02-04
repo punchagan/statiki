@@ -1,4 +1,4 @@
--r requirements.txt
+-r requirements-base.txt
 nose
 pytest
 pytest-cov

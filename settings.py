@@ -7,7 +7,10 @@ def read_heroku_env_file(name='.env'):
     env_path = join(dirname(abspath(__file__)), name)
     env = {}
     if exists(env_path):
-        execfile(env_path, env)
+        with open(env_path) as f:
+            for line in f:
+                key, value = line.split('=')
+                env[key.strip()] = value.strip()
     return env
 
 

@@ -146,11 +146,15 @@ class TestTravisUtils(unittest.TestCase):
 
         # When
         with patch('travis_utils.TravisUtils.start_sync', true):
-            with patch('requests.get', Mock(return_value=response)):
+            with patch('requests.get', Mock(return_value=response)) as get:
                 with patch('time.sleep', Mock()):
                     synced = TravisUtils.sync_with_github(TRAVIS_TOKEN)
 
         # Then
+        _, kwargs = get.call_args
+        self.assertDictEqual(
+            kwargs['headers'], TravisUtils.get_header(TRAVIS_TOKEN)
+        )
         self.assertFalse(synced)
 
     def test_should_handle_aborted_sync(self):

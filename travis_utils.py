@@ -199,10 +199,12 @@ class TravisUtils(object):
         return synced
 
     @staticmethod
-    def wait_to_sync(headers):
+    def wait_to_sync(token):
         """ Wait until a sync finishes. """
 
         import time
+
+        headers = TravisUtils.get_header(token)
 
         for count in range(6):
 

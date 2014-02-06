@@ -5,7 +5,8 @@ REPO=%(REPO)s
 # Run the build command and get rid of everything else.
 function build_html() {
     # Build
-    nikola build
+    # Build twice until getnikola/nikola#1032 is fixed.
+    nikola build && nikola build
 
     ## Remove all the source files, we only want the output!
     ls | grep -v output | xargs rm -rf

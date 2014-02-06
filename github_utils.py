@@ -13,7 +13,7 @@ class GitHubUtils(object):
     """ A collection of helper functions for consuming the GitHUb API. """
 
     @staticmethod
-    def commit(path, content, repo, token):
+    def commit(path, content, repo, token, extra_payload=None):
         """ Commit the given content to the given path in a repository. """
 
         if not GitHubUtils.exists(repo, path, token):
@@ -22,11 +22,15 @@ class GitHubUtils(object):
             url = 'https://api.github.com/' + url
 
             headers = GitHubUtils.get_header(token)
+
             payload = {
                 'path': path,
                 'message': 'Adding %s (from statiki).' % path,
                 'content': base64.standard_b64encode(content),
             }
+
+            if extra_payload is not None:
+                payload.update(extra_payload)
 
             response = requests.put(
                 url, data=json.dumps(payload), headers=headers

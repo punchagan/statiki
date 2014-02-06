@@ -52,9 +52,19 @@ class TestGitHubUtils(unittest.TestCase):
         # Given
         full_name = 'punchagan/experiri'
         content = path = self._get_random_string()
+        author = {
+            'name': 'Tests on Travis',
+            'email': 'travis-ci-tests@test.com',
+        }
+        info = {
+            'author': author,
+            'committer': author,
+        }
 
         # When
-        committed = GitHubUtils.commit(path, content, full_name, GH_TOKEN)
+        committed = GitHubUtils.commit(
+            path, content, full_name, GH_TOKEN, extra_payload=info
+        )
 
         # Then
         self.assertTrue(committed)
@@ -64,7 +74,15 @@ class TestGitHubUtils(unittest.TestCase):
         # Given
         full_name = 'punchagan/experiri'
         content = path = self._get_random_string()
-        GitHubUtils.commit(path, content, full_name, GH_TOKEN)
+        author = {
+            'name': 'Tests on Travis',
+            'email': 'travis-ci-tests@test.com',
+        }
+        info = {
+            'author': author,
+            'committer': author,
+        }
+        GitHubUtils.commit(path, content, full_name, GH_TOKEN, info)
 
         # When
         committed = GitHubUtils.commit(path, content*2, full_name, GH_TOKEN)

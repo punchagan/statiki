@@ -57,7 +57,10 @@ class TestTravisUtils(unittest.TestCase):
             token = TravisUtils.is_travis_user(GH_TOKEN)
 
         # Then
-        self.assertEqual(token, TRAVIS_TOKEN)
+        # Note: We don't check if token is equal to expected token,
+        # since a failure would mean the token being exposed in the error
+        # output
+        self.assertTrue(isinstance(token, basestring))
 
     def test_should_detect_bogus_user(self):
         self.assertIsNone(TravisUtils.is_travis_user(BOGUS))
@@ -103,7 +106,12 @@ class TestTravisUtils(unittest.TestCase):
 
     def test_should_get_yaml_contents(self):
         # When
-        contents = TravisUtils.get_yaml_contents(THIS_REPO, GH_TOKEN)
+        git_user_info = {
+            'GH_TOKEN': GH_TOKEN,
+            'GIT_NAME': 'Travis CI',
+            'GIT_EMAIL': 'bogus@travis-ci.org'
+        }
+        contents = TravisUtils.get_yaml_contents(THIS_REPO, git_user_info)
 
         # Then
         data = yaml.load(contents)

@@ -25,6 +25,8 @@ SCRIPT = 'travis_build_n_deploy.sh'
 HERE = dirname(abspath(__file__))
 SITE = 'Statiki'
 DESCRIPTION = 'An easy-to-use service for deploying simple web-sites'
+GIT_NAME = 'Travis CI'
+GIT_EMAIL = 'bogus@travis-ci.org'
 
 
 # Flask setup
@@ -223,21 +225,44 @@ def show_status():
 def create_travis_files(full_name, github_token):
     """ Create the files required for Travis CI hooks to work. """
 
-    created      = {}
-
-    travis_files = [
-        (SCRIPT, TravisUtils.get_script_contents(full_name)),
-        (
-            '.travis.yml',
-            TravisUtils.get_yaml_contents(
-                full_name, github_token
-            ) % dict(SCRIPT=SCRIPT)
-        )
+    created       = {}
+    git_user_info = {
+        'GIT_NAME': GIT_NAME,
+        'GIT_EMAIL': GIT_EMAIL,
+        'GH_TOKEN': github_token
+    }
+    travis_files  = [
+        {
+            'name': SCRIPT,
+            'content': TravisUtils.get_script_contents(full_name),
+            'message': 'Adding build and deploy script. \n\n[skip ci]',
+        },
+        {
+            'name': '.travis.yml',
+            'content': TravisUtils.get_yaml_contents(
+                full_name, git_user_info
+            ) % dict(SCRIPT=SCRIPT),
+            'message': 'Adding .travis.yml',
+        },
     ]
 
-    for name, content in travis_files:
+    for file_ in travis_files:
+        name          = file_['name']
+        content       = file_['content']
+        extra_payload = {
+            'author': {
+                'name': GIT_NAME,
+                'email': GIT_EMAIL,
+            },
+            'committer': {
+                'name': GIT_NAME,
+                'email': GIT_EMAIL,
+            },
+            'message': file_['message']
+        }
+
         created[name] = GitHubUtils.commit(
-            name, content, full_name, github_token
+            name, content, full_name, github_token, extra_payload
         )
 
     return created

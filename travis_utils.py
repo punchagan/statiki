@@ -99,12 +99,14 @@ class TravisUtils(object):
         return re.findall(pattern, response.text)[0][1].strip()
 
     @staticmethod
-    def get_yaml_contents(full_name, github_token):
+    def get_yaml_contents(full_name, git_user_info):
         """ Get the contents to be dumped into .travis.yml. """
 
-        data   = 'GH_TOKEN=%s GIT_NAME=%s GIT_EMAIL=%s' % (
-            github_token.encode(), 'Travis CI', 'testing@travis-ci.org'
-        )
+        data   = (
+            'GH_TOKEN={GH_TOKEN} '
+            'GIT_NAME={GIT_NAME} '
+            'GIT_EMAIL={GIT_EMAIL}'
+        ).format(**git_user_info)
         secure = TravisUtils.get_encrypted_text(full_name, data)
 
         config = {

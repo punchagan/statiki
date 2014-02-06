@@ -25,9 +25,8 @@ SCRIPT = 'travis_build_n_deploy.sh'
 HERE = dirname(abspath(__file__))
 SITE = 'Statiki'
 DESCRIPTION = 'An easy-to-use service for deploying simple web-sites'
-GIT_NAME = 'Travis CI'
-GIT_EMAIL = 'bogus@travis-ci.org'
-
+GIT_NAME = 'Statiki'
+GIT_EMAIL = 'noreply@statiki.herokuapp.com'
 
 # Flask setup
 app = Flask(__name__)
@@ -235,14 +234,17 @@ def create_travis_files(full_name, github_token):
         {
             'name': SCRIPT,
             'content': TravisUtils.get_script_contents(full_name),
-            'message': 'Adding build and deploy script. \n\n[skip ci]',
+            'message': (
+                'Add build and deploy script (via Statiki).\n\n'
+                '[skip ci]'
+            ),
         },
         {
             'name': '.travis.yml',
             'content': TravisUtils.get_yaml_contents(
                 full_name, git_user_info
             ) % dict(SCRIPT=SCRIPT),
-            'message': 'Adding .travis.yml',
+            'message': 'Add .travis.yml (via Statiki).',
         },
     ]
 

@@ -32,16 +32,3 @@ Statiki initializes a demo nikola site (checks for conf.py if the repository
 is an old, existing one), and publishes the output.
 
 Runs at [http://statiki.herokuapp.com](http://statiki.herokuapp.com)
-
-### TO-DO ###
-
-1. Allow repos in organizations
-1. Allow user/organization pages
-1. Allow plugin and theme installation
-1. Fix RSS issues when deploying to subdirs or work around it
-1. Clean-up the README added to the sites. Add a build status on the README!
-1. See if Travis signup can be automated.
-1. Check timezone related issues?  For now, enable FUTURE_IS_NOW!
-1. Add a FAQ with links to GH pages, Travis CI docs. (CNAME, [skip ci], etc.)
-1. Add javascript tests?
-1. Add tests for the bash script?

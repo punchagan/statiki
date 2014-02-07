@@ -2,7 +2,7 @@
 
 # Standard library.
 from functools import wraps
-from os.path import abspath, dirname, exists, join
+from os.path import abspath, dirname, join
 
 # 3rd party library.
 from flask import (

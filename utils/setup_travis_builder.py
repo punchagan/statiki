@@ -27,6 +27,7 @@ Requires:
 import json
 import os
 from os.path import basename, dirname, exists, join
+import shutil
 
 # 3rd party library.
 import requests
@@ -74,7 +75,7 @@ def create_travis_config(path, repo, gh_token):
     print('%s created. Add and commit to the git repo.' % travis_yml)
 
 
-def create_script_file(path, repo):
+def create_script_file(path):
     """ Create the script file that will be run, to build and deploy. """
 
     script = join(path, SCRIPT)
@@ -84,15 +85,9 @@ def create_script_file(path, repo):
         return
 
     template = join(dirname(__file__), 'travis_script_template.sh')
-    with open(template) as f:
-        contents = f.read()
+    shutil.copy(template, script)
 
-    with open(script, 'w') as f:
-        f.write(contents % {'REPO': repo})
-
-    os.chmod(script, 0755)
-
-    print('%s created. Add and commit to the git repo.' % script)
+    print('%s copied. Add and commit to the git repo.' % script)
 
 
 def enable_ci_for_repo(repo, gh_token):
@@ -168,7 +163,7 @@ def main():
     add_nojekyll(path)
     gh_token = get_gh_auth_token()
     create_travis_config(path, repo, gh_token)
-    create_script_file(path, repo)
+    create_script_file(path)
     enable_ci_for_repo(repo, gh_token)
 
 

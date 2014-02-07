@@ -1,6 +1,6 @@
 set -e
 
-REPO=%(REPO)s
+REPO=$TRAVIS_REPO_SLUG
 
 # Run the build command and get rid of everything else.
 function build_html() {

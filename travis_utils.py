@@ -83,7 +83,7 @@ class TravisUtils(object):
         return repo_id
 
     @staticmethod
-    def get_script_contents(full_name):
+    def get_script_contents():
         """ Get the contents of the script to be run on travis. """
 
         template = join(
@@ -92,7 +92,7 @@ class TravisUtils(object):
         with open(template) as f:
             contents = f.read()
 
-        return contents % {'REPO': full_name}
+        return contents
 
     @staticmethod
     def get_status():

@@ -251,7 +251,7 @@ def create_travis_files(full_name, github_token):
     travis_files  = [
         {
             'name': SCRIPT,
-            'content': TravisUtils.get_script_contents(full_name),
+            'content': TravisUtils.get_script_contents(),
             'message': (
                 'Add build and deploy script (via Statiki).\n\n'
                 '[skip ci]'

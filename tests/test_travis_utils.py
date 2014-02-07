@@ -126,14 +126,8 @@ class TestTravisUtils(unittest.TestCase):
         self.assertIn('secure', data['env']['global'])
 
     def test_should_get_script_contents(self):
-        # Given
-        expected = 'REPO=%s' % THIS_REPO
-
-        # When
-        contents = TravisUtils.get_script_contents(THIS_REPO)
-
-        # Then
-        self.assertIn(expected, contents)
+        # When/Then
+        self.assertIn('REPO=', TravisUtils.get_script_contents())
 
     def test_should_not_start_sync_unauthenticated(self):
         self.assertFalse(TravisUtils.sync_with_github(BOGUS))

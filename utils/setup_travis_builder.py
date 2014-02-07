@@ -1,8 +1,5 @@
 """ A command line tool to automate everything for an existing repo.
 
-NOTE: This is a standalone script for those who do not wish to use the
-web-service.  This script may be out-dated, too!
-
 This script adds and/or tweaks a .travis.yml file and an additional script
 to deploy using travis-ci to gh-pages branch on GitHub.
 
@@ -14,22 +11,29 @@ Requires:
   - pyyaml
   - requests
   - rsa
+  - github_utils (from statiki)
+  - travis_utils (from statiki)
+
+  - travis_script_template.sh (present along with this file)
 
 """
 
 # Standard library.
-import base64
 import json
 import os
 from os.path import basename, dirname, exists, join
-import re
 
 # 3rd party library.
 import requests
-import rsa
-import yaml
+
+# Local library
+from travis_utils import TravisUtils
 
 SCRIPT = './travis_build_n_deploy.sh'
+GIT_NAME = 'Statiki'
+GIT_EMAIL = 'noreply@statiki.herokuapp.com'
+# fixme: currently writes to some dumb path. Use .gitconfig?
+GH_TOKEN_FILE = join(dirname(__file__), '.gh_token')
 
 
 def add_nojekyll(path):
@@ -46,7 +50,7 @@ def add_nojekyll(path):
             pass
 
 
-def create_travis_config(path, repo):
+def create_travis_config(path, repo, gh_token):
     """ Add .travis.yml. """
 
     travis_yml = join(path, '.travis.yml')
@@ -55,30 +59,12 @@ def create_travis_config(path, repo):
         print('%s already exists. Nothing to do.' % travis_yml)
         return
 
-    gh_token = get_gh_auth_token().encode()
-    enable_ci_for_repo(repo, gh_token)
-    data = 'GH_TOKEN=%s GIT_NAME=%s GIT_EMAIL=%s' % (
-        gh_token, 'Travis CI', 'testing@travis-ci.org'
+    content = TravisUtils.get_yaml_contents(
+        repo, dict(GIT_NAME=GIT_NAME, GIT_EMAIL=GIT_EMAIL, GH_TOKEN=gh_token)
     )
-    secure = get_encrypted_text(repo, data)
-
-    config = {
-        'env': {'global': {'secure': secure}},
-        'install': [
-                'wget https://github.com/getnikola/wheelhouse/archive/v2.7.zip',
-                'unzip v2.7.zip',
-                'pip install --use-wheel --no-index --find-links=wheelhouse-2.7 lxml Pillow',
-                'rm -rf wheelhouse-2.7 v2.7.zip',
-                'pip install nikola webassets',
-        ],
-        'branches': {'only': ['master']},
-        'language': 'python',
-        'python': ['2.7'],
-        'script': SCRIPT,
-    }
 
     with open(travis_yml, 'w') as f:
-        yaml.dump(config, f)
+        f.write(content)
 
     print('%s created. Add and commit to the git repo.' % travis_yml)
 
@@ -107,72 +93,63 @@ def create_script_file(path, repo):
 def enable_ci_for_repo(repo, gh_token):
     """ Enable the travis hook for the given repo. """
 
-    repo_id = get_repo_id(repo)
-    access_token = get_travis_access_token(gh_token)
-    payload = json.dumps(dict(hook=dict(active=True, id=repo_id)))
-    headers = {
-        'Authorization': 'token %s' % access_token,
-        'Content-Type': 'application/json; charset=UTF-8'
-    }
-    url = 'https://api.travis-ci.org/hooks/%s' % repo_id
-    requests.put(url, data=payload,  headers=headers)
-    print('Enabled GitHub/Travis hook for %s' % repo)
+    access_token = TravisUtils.get_access_token(gh_token)
+    repo_id      = TravisUtils.get_repo_id(repo, access_token)
+    enabled = TravisUtils.enable_hook(repo_id, access_token)
+    if enabled:
+        print('Enabled GitHub/Travis hook for %s' % repo)
+
+    else:
+        print('Failed to enable GitHub/Travis hook for %s' % repo)
 
 
-def get_encrypted_text(repo_name, data):
-    """ Return encrypted text for the data. """
-
-    public_key = get_travis_public_key(repo_name)
-    key = rsa.PublicKey.load_pkcs1_openssl_pem(public_key)
-    secure = base64.encodestring(rsa.encrypt(data, key))
-    secure, _ = re.subn('\s+', '', secure)
-
-    return secure
-
-
-def get_gh_auth_token(note='TravisCI deployment'):
+def get_gh_auth_token(note='Statiki commandline script'):
     """ Get a token from GitHub to use for pushing from Travis. """
 
-    from getpass import getpass
+    token = read_gh_token()
 
-    username = raw_input('GitHub username: ')
-    password = getpass('GitHub password: ')
+    if token is None:
 
-    url = 'https://api.github.com/authorizations'
-    data = {
-        'scopes': ['repo'],
-        'note': note
-    }
-    response = requests.post(
-        url, data=json.dumps(data), auth=(username, password)
-    )
+        from getpass import getpass
 
-    return response.json()['token']
+        username = raw_input('GitHub username: ')
+        password = getpass('GitHub password: ')
 
+        url = 'https://api.github.com/authorizations'
+        data = {
+            'scopes': ['repo'],
+            'note': note
+        }
+        response = requests.post(
+            url, data=json.dumps(data), auth=(username, password)
+        )
 
-def get_repo_id(repo):
-    """ Get the id for a repo. """
+        token = response.json()['token'].encode()
+        write_gh_token(token)
 
-    url = 'https://api.travis-ci.org/repos/%s' % repo
-
-    return requests.get(url).json()['id']
-
-
-def get_travis_access_token(gh_token):
-
-    url = 'https://api.travis-ci.org/auth/github'
-    data = {'github_token': gh_token}
-
-    return requests.post(url, data=data).json()['access_token']
+    return token
 
 
-def get_travis_public_key(repo):
-    """ Get a public key for the repository from travis. """
+def read_gh_token():
+    """ Read the token from the token file. """
 
-    url = 'https://api.travis-ci.org/repos/%s' % repo
-    response = requests.get(url)
+    if not exists(GH_TOKEN_FILE):
+        token = None
 
-    return response.json()['public_key'].replace('RSA PUBLIC', 'PUBLIC')
+    else:
+        with open(GH_TOKEN_FILE) as f:
+            token = f.read().strip()
+
+    return token
+
+
+def write_gh_token(token):
+    """ Write the token to the token file. """
+
+    with open(GH_TOKEN_FILE, 'w') as f:
+        f.write(token)
+
+    return
 
 
 def main():
@@ -184,8 +161,10 @@ def main():
     path = os.path.abspath(args['<path-to-dir>'] or '.')
 
     add_nojekyll(path)
-    create_travis_config(path, repo)
+    gh_token = get_gh_auth_token()
+    create_travis_config(path, repo, gh_token)
     create_script_file(path, repo)
+    enable_ci_for_repo(repo, gh_token)
 
 
 if __name__ == "__main__":

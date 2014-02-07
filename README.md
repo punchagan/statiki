@@ -32,3 +32,7 @@ Statiki initializes a demo nikola site (checks for conf.py if the repository
 is an old, existing one), and publishes the output.
 
 Runs at [http://statiki.herokuapp.com](http://statiki.herokuapp.com)
+
+## License ##
+
+Copyright © 2014 Puneeth Chaganti and others. See the LICENSE file for license rights and limitations (MIT).

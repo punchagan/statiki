@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+
+# Copyright © 2014 Puneeth Chaganti and others.
+# See the LICENSE file for license rights and limitations (MIT).
+
 """ A command line tool to automate everything for an existing repo.
 
 This script adds and/or tweaks a .travis.yml file and an additional script

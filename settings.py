@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+
+# Copyright © 2014 Puneeth Chaganti and others.
+# See the LICENSE file for license rights and limitations (MIT).
+
 import os
 
 from os.path import abspath, dirname, exists, join

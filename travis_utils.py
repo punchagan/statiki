@@ -104,7 +104,7 @@ class TravisUtils(object):
         return re.findall(pattern, response.text)[0][1].strip()
 
     @staticmethod
-    def get_yaml_contents(full_name, git_user_info):
+    def get_yaml_contents(full_name, script_name, git_user_info):
         """ Get the contents to be dumped into .travis.yml. """
 
         data   = (
@@ -126,7 +126,7 @@ class TravisUtils(object):
             'branches': {'only': ['master']},
             'language': 'python',
             'python': ['2.7'],
-            'script': 'bash %(SCRIPT)s',
+            'script': 'bash %s' % script_name,
         }
 
         return yaml.dump(config)

@@ -117,13 +117,17 @@ class TestTravisUtils(unittest.TestCase):
             'GIT_NAME': 'Travis CI',
             'GIT_EMAIL': 'bogus@travis-ci.org'
         }
-        contents = TravisUtils.get_yaml_contents(THIS_REPO, git_user_info)
+        script_name = 'bazooka.sh'
+        contents = TravisUtils.get_yaml_contents(
+            THIS_REPO, script_name, git_user_info
+        )
 
         # Then
         data = yaml.load(contents)
         self.assertIn('install', data)
         self.assertIn('script', data)
         self.assertIn('secure', data['env']['global'])
+        self.assertIn('bash %s' % script_name, data['script'])
 
     def test_should_get_script_contents(self):
         # When/Then

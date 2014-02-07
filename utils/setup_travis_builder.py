@@ -65,9 +65,8 @@ def create_travis_config(path, repo, gh_token):
         print('%s already exists. Nothing to do.' % travis_yml)
         return
 
-    content = TravisUtils.get_yaml_contents(
-        repo, dict(GIT_NAME=GIT_NAME, GIT_EMAIL=GIT_EMAIL, GH_TOKEN=gh_token)
-    )
+    info = dict(GIT_NAME=GIT_NAME, GIT_EMAIL=GIT_EMAIL, GH_TOKEN=gh_token)
+    content = TravisUtils.get_yaml_contents(repo, SCRIPT, info)
 
     with open(travis_yml, 'w') as f:
         f.write(content)

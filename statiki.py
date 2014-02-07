@@ -242,13 +242,13 @@ def show_status():
 def create_travis_files(full_name, github_token):
     """ Create the files required for Travis CI hooks to work. """
 
-    created       = {}
-    git_user_info = {
+    created      = {}
+    info         = {
         'GIT_NAME': GIT_NAME,
         'GIT_EMAIL': GIT_EMAIL,
         'GH_TOKEN': github_token
     }
-    travis_files  = [
+    travis_files = [
         {
             'name': SCRIPT,
             'content': TravisUtils.get_script_contents(),
@@ -259,9 +259,7 @@ def create_travis_files(full_name, github_token):
         },
         {
             'name': '.travis.yml',
-            'content': TravisUtils.get_yaml_contents(
-                full_name, git_user_info
-            ) % dict(SCRIPT=SCRIPT),
+            'content': TravisUtils.get_yaml_contents(full_name, SCRIPT, info),
             'message': 'Add .travis.yml (via Statiki).',
         },
     ]

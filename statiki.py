@@ -153,6 +153,19 @@ def authorized():
     return redirect(url_for('index'))
 
 
+@app.route('/faq')
+def show_faq():
+
+    # fixme: remove duplication of context
+    context = {
+        'user': current_user,
+        'SITE': SITE,
+        'DESCRIPTION': DESCRIPTION,
+    }
+
+    return render_template('faq.html', **context)
+
+
 @app.route('/login')
 def login():
     redirect_uri = url_for('authorized', _external=True)

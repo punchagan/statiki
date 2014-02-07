@@ -196,6 +196,13 @@ class TestStatiki(unittest.TestCase):
         self.assertIn('GitHub Status', response.data)
         self.assertIn('Travis Status', response.data)
 
+    def test_should_show_faq(self):
+        # When
+        response = self.app.get('/faq')
+
+        # Then
+        self.assertEqual(200, response.status_code)
+
     #### Private protocol #####################################################
 
     @contextmanager

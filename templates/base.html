@@ -29,6 +29,7 @@
         <a class="pure-menu-heading" href="{{ url_for('index') }}">{{SITE}}</a>
         <ul>
             <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('show_faq') }}">FAQ</a></li>
             <li><a href="{{ url_for('show_status') }}">Status</a></li>
             {% if user.is_anonymous() %}
             <li><a href="{{ url_for('login') }}">Login with GitHub</a></li>

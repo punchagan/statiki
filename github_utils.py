@@ -56,33 +56,27 @@ class GitHubUtils(object):
 
         """
 
-        if GitHubUtils.is_valid_repository(full_name):
-            created = False
+        user, user_type, name = GitHubUtils.get_user_and_repo(
+            full_name, token
+        )
 
-        else:
-            user, user_type, name = GitHubUtils.get_user_and_repo(
-                full_name, token
-            )
+        url = 'https://api.github.com/user/repos'
+        headers = GitHubUtils.get_header(token)
+        payload = {
+            'name': name,
+            'description': 'Website using Nikola, created from statiki',
+            'homepage': 'http://%s.github.io/%s' % (user, name),
+            'private': False,
+            'has_issues': False,
+            'has_wiki': False,
+            'has_downloads': False,
+        }
 
-            url = 'https://api.github.com/user/repos'
-            headers = GitHubUtils.get_header(token)
-            payload = {
-                'name': name,
-                'description': 'Website using Nikola, created from statiki',
-                'homepage': 'http://%s.github.io/%s' % (user, name),
-                'private': False,
-                'has_issues': False,
-                'has_wiki': False,
-                'has_downloads': False,
-            }
+        response = requests.post(
+            url, data=json.dumps(payload), headers=headers
+        )
 
-            response = requests.post(
-                url, data=json.dumps(payload), headers=headers
-            )
-
-            created = response.status_code == 201
-
-        return created
+        return response.status_code == 201
 
     @staticmethod
     def exists(full_name, path, token):

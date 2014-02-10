@@ -129,9 +129,39 @@ class TestTravisUtils(unittest.TestCase):
         self.assertIn('secure', data['env']['global'])
         self.assertIn('bash %s' % script_name, data['script'])
 
+    def test_should_get_yaml_contents_for_user_pages_repo(self):
+        # When
+        git_info = {
+            'GH_TOKEN': GH_TOKEN,
+            'GIT_NAME': 'Travis CI',
+            'GIT_EMAIL': 'bogus@travis-ci.org'
+        }
+        script_name = 'bazooka.sh'
+        contents = TravisUtils.get_yaml_contents(
+            THIS_REPO, script_name, git_info, user_pages=True
+        )
+
+        # Then
+        data = yaml.load(contents)
+        self.assertIn('deploy', data['branches']['only'])
+
     def test_should_get_script_contents(self):
         # When/Then
-        self.assertIn('REPO=', TravisUtils.get_script_contents())
+        content = TravisUtils.get_script_contents()
+
+        # Then
+        self.assertIn('REPO=', content)
+        self.assertIn('OUTPUT=gh-pages', content)
+        self.assertIn('SOURCE=master', content)
+
+    def test_should_get_script_contents_for_user_pages_repo(self):
+        # When/Then
+        content = TravisUtils.get_script_contents(user_pages=True)
+
+        # Then
+        self.assertIn('REPO=', content)
+        self.assertIn('OUTPUT=master', content)
+        self.assertIn('SOURCE=deploy', content)
 
     def test_should_not_start_sync_unauthenticated(self):
         self.assertFalse(TravisUtils.sync_with_github(BOGUS))

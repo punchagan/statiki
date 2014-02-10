@@ -83,7 +83,7 @@ class TravisUtils(object):
         return repo_id
 
     @staticmethod
-    def get_script_contents():
+    def get_script_contents(user_pages=False):
         """ Get the contents of the script to be run on travis. """
 
         template = join(
@@ -91,6 +91,10 @@ class TravisUtils(object):
         )
         with open(template) as f:
             contents = f.read()
+
+        if user_pages:
+            contents = contents.replace('OUTPUT=gh-pages', 'OUTPUT=master')
+            contents = contents.replace('SOURCE=master', 'SOURCE=deploy')
 
         return contents
 
@@ -104,14 +108,16 @@ class TravisUtils(object):
         return re.findall(pattern, response.text)[0][1].strip()
 
     @staticmethod
-    def get_yaml_contents(full_name, script_name, git_user_info):
+    def get_yaml_contents(full_name, script_name, git_info, user_pages=False):
         """ Get the contents to be dumped into .travis.yml. """
+
+        branch = 'deploy' if user_pages else 'master'
 
         data   = (
             'GH_TOKEN={GH_TOKEN} '
             'GIT_NAME={GIT_NAME} '
             'GIT_EMAIL={GIT_EMAIL}'
-        ).format(**git_user_info)
+        ).format(**git_info)
         secure = TravisUtils.get_encrypted_text(full_name, data)
 
         config = {
@@ -123,7 +129,7 @@ class TravisUtils(object):
                 'rm -rf wheelhouse-2.7 v2.7.zip',
                 'pip install nikola webassets',
             ],
-            'branches': {'only': ['master']},
+            'branches': {'only': [branch]},
             'language': 'python',
             'python': ['2.7'],
             'script': 'bash %s' % script_name,

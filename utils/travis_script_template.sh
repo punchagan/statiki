@@ -1,6 +1,8 @@
 set -e
 
+OUTPUT=gh-pages
 REPO=$TRAVIS_REPO_SLUG
+SOURCE=master
 
 # Run the build command and get rid of everything else.
 function build_html() {
@@ -16,10 +18,10 @@ function build_html() {
 # Push the built html to github pages
 function deploy_html() {
 
-    git_create_gh_pages
+    git_create_pages_branch $1
     build_html
     git_commit_all
-    git_push_silent gh-pages
+    git_push_silent $1
 
 }
 
@@ -57,10 +59,10 @@ function git_config_setup() {
 }
 
 
-function git_create_gh_pages() {
-    ## Create a new gh-pages branch
-    git branch -D gh-pages || true
-    git checkout --orphan gh-pages
+function git_create_pages_branch() {
+    ## Create a new pages branch
+    git branch -D $1 || true
+    git checkout --orphan $1
 }
 
 # Fix the config file
@@ -76,24 +78,24 @@ function fix_nikola_config(){
 # Initialize site using nikola's sample site
 function initialize_site() {
 
-    git checkout master
+    git checkout $1
     nikola init --demo demo
     mv demo/* .
     touch files/.nojekyll
     fix_nikola_config
     git_commit_all
-    git_push_silent master
+    git_push_silent $1
 
 }
 
 # Run only if not a pull request.
-if [[ $TRAVIS_PULL_REQUEST == 'false' ]] ; then
+if [[ ${TRAVIS_PULL_REQUEST} == 'false' ]] ; then
     git_config_setup
 
     if [[ ! -f conf.py ]]; then
-        initialize_site
+        initialize_site ${SOURCE}
     fi
 
-    deploy_html
+    deploy_html ${OUTPUT}
 
 fi

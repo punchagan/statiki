@@ -67,6 +67,7 @@ def travis_login_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
         travis_token = TravisUtils.is_travis_user(current_user.github_token)
+
         if travis_token is None:
             return jsonify(dict(message=messages.NO_TRAVIS_ACCOUNT))
         else:
@@ -184,23 +185,66 @@ def logout():
     return redirect(url_for('index'))
 
 
+@app.route('/create_repo', methods=['POST'])
+@login_required
+@travis_login_required
+def create_repo():
+
+    repo_name = request.form.get('repo_name', '')
+    github_token = current_user.github_token
+
+    if len(repo_name) > 0:
+        full_name = '%s/%s' % (current_user.username, repo_name)
+        user_pages = False
+
+    else:
+        full_name = '{0}/{0}.github.io'.format(current_user.username)
+        user_pages = True
+
+    created = exists = overwrite = False
+
+    # If repo does not exist, create it.
+    if not GitHubUtils.is_valid_repository(full_name):
+        if GitHubUtils.create_new_repository(full_name, github_token):
+            created = True
+            message = messages.CREATE_REPO_SUCCESS
+        else:
+            message = messages.CREATE_REPO_FAILURE
+
+    elif GitHubUtils.exists(full_name, '.travis.yml', github_token):
+        exists = True
+        overwrite = True
+        message = messages.OVERWRITE_YAML
+
+    else:
+        exists = True
+        message = messages.REPO_EXISTS
+
+    data = {
+        'exists': exists,
+        'created': created,
+        'overwrite': overwrite,
+        'message': message,
+        'full_name': full_name,
+    }
+
+    if exists or created:
+        data['content'] = get_travis_files_content(
+            full_name, github_token, user_pages
+        )
+
+    return jsonify(data)
+
+
 @app.route('/manage', methods=['POST'])
 @login_required
 @travis_login_required
 def manage():
 
-    repo_name = request.form.get('repo_name', None)
-    full_name = '%s/%s' % (current_user.username, repo_name)
+    full_name = request.form.get('full_name', '')
+    repo_name = full_name.split('/', 1)[-1]
     github_token = current_user.github_token
     travis_token = current_user.travis_token
-
-    if not repo_name:
-        message = messages.EMPTY_REPO_NAME
-        return jsonify(dict(message=message))
-
-    # If repo does not exist, create it.
-    if not GitHubUtils.is_valid_repository(full_name):
-        GitHubUtils.create_new_repository(full_name, github_token)
 
     # If repo not listed in travis, sync
     repo_id = TravisUtils.get_repo_id(full_name, travis_token)
@@ -216,10 +260,7 @@ def manage():
     created = create_travis_files(full_name, github_token)
 
     response = get_display_response(enabled, created)
-    response['message'] %= dict(
-        USER=current_user.username,
-        REPO=repo_name,
-    )
+    response['message'] %= dict(USER=current_user.username, REPO=repo_name)
     return jsonify(response)
 
 
@@ -243,26 +284,8 @@ def create_travis_files(full_name, github_token):
     """ Create the files required for Travis CI hooks to work. """
 
     created      = {}
-    info         = {
-        'GIT_NAME': GIT_NAME,
-        'GIT_EMAIL': GIT_EMAIL,
-        'GH_TOKEN': github_token
-    }
-    travis_files = [
-        {
-            'name': SCRIPT,
-            'content': TravisUtils.get_script_contents(),
-            'message': (
-                'Add build and deploy script (via Statiki).\n\n'
-                '[skip ci]'
-            ),
-        },
-        {
-            'name': '.travis.yml',
-            'content': TravisUtils.get_yaml_contents(full_name, SCRIPT, info),
-            'message': 'Add .travis.yml (via Statiki).',
-        },
-    ]
+
+    travis_files = get_travis_files_content(full_name, github_token)
 
     for file_ in travis_files:
         name          = file_['name']
@@ -309,10 +332,39 @@ def get_display_response(enabled, created):
     return response
 
 
+def get_travis_files_content(full_name, github_token, user_pages=False):
+    """ Return the content of the files that will be committed to the repo. """
+
+    info         = {
+        'GIT_NAME': GIT_NAME,
+        'GIT_EMAIL': GIT_EMAIL,
+        'GH_TOKEN': github_token
+    }
+
+    travis_files = [
+        {
+            'name': SCRIPT,
+            'content': TravisUtils.get_script_contents(user_pages),
+            'message': (
+                'Add build and deploy script (via Statiki).\n\n'
+                '[skip ci]'
+            ),
+        },
+        {
+            'name': '.travis.yml',
+            'content': TravisUtils.get_yaml_contents(
+                full_name, SCRIPT, info, user_pages
+            ),
+            'message': 'Add .travis.yml (via Statiki).',
+        },
+    ]
+
+    return travis_files
+
 #### Standalone ###############################################################
 
 if __name__ == '__main__':
-    db.create_all()
-    app.run(host='0.0.0.0')
+    db.create_all()  # pragma: no cover
+    app.run(host='0.0.0.0')  # pragma: no cover
 
 #### EOF ######################################################################

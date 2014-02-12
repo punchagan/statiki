@@ -83,7 +83,7 @@ class TestStatiki(unittest.TestCase):
         # Then
         self.assertEqual(messages.TOTAL_FAILURE, message)
 
-    def test_should_partial_success(self):
+    def test_should_show_partial_success(self):
         # Given
         enabled = True
         created = {
@@ -146,33 +146,86 @@ class TestStatiki(unittest.TestCase):
     def test_should_show_travis_signup(self):
         # Given/When
         with self.logged_in(travis_user=False):
-            response = self.app.post('/manage', data=dict(repo_name='statiki'))
+            response = self.app.post(
+                '/create_repo', data=dict(repo_name='statiki')
+            )
 
         # Then
         self.assertEqual(200, response.status_code)
         self.assertIn(json.dumps(messages.NO_TRAVIS_ACCOUNT), response.data)
 
-    def test_should_request_repo_name(self):
-        # Given/When
-        with self.logged_in():
-            response = self.app.post('/manage')
-
-        # Then
-        self.assertEqual(200, response.status_code)
-        self.assertIn(messages.EMPTY_REPO_NAME, response.data)
-
-    def test_should_create_repo_but_sync_fails(self):
+    def test_should_create_repo(self):
         # Given
         target = 'github_utils.GitHubUtils.create_new_repository'
+        content = {'foo': 'bar'}
+        get_content = Mock(return_value=content)
 
-        # When/Then
+        # When
         with self.logged_in('punchagan'):
             with patch(target, Mock()) as create:
-                self.app.post('/manage', data={'repo_name': 'foo'})
+                with patch('statiki.get_travis_files_content', get_content):
+                    response = self.app.post(
+                        '/create_repo', data={'repo_name': 'foo'}
+                    )
 
         # Then
         args, _ = create.call_args
         self.assertEqual(args, ('punchagan/foo', GH_TOKEN))
+        data = json.loads(response.data)
+        self.assertTrue(data['created'])
+        self.assertEqual(content, data['content'])
+        self.assertEqual(messages.CREATE_REPO_SUCCESS, data['message'])
+
+    def test_should_inform_create_repo_failure(self):
+        # Given
+        target = 'github_utils.GitHubUtils.create_new_repository'
+        create_repo = Mock(return_value=False)
+
+        # When
+        with self.logged_in('punchagan'):
+            with patch(target, create_repo):
+                response = self.app.post(
+                    '/create_repo', data={'repo_name': ''}
+                )
+
+        # Then
+        args, _ = create_repo.call_args
+        self.assertEqual(args, ('punchagan/punchagan.github.io', GH_TOKEN))
+        data = json.loads(response.data)
+        self.assertFalse(data['created'])
+        self.assertEqual(messages.CREATE_REPO_FAILURE, data['message'])
+
+    def test_should_prompt_statiki_files_overwrite(self):
+        # Given/When
+        true = Mock(return_value=True)
+        with self.logged_in('punchagan'):
+            with patch('github_utils.GitHubUtils.exists', true):
+                response = self.app.post(
+                    '/create_repo', data={'repo_name': 'statiki'}
+                )
+
+        # Then
+        data = json.loads(response.data)
+        self.assertFalse(data['created'])
+        self.assertTrue(data['exists'])
+        self.assertTrue(data['overwrite'])
+        self.assertEqual(messages.OVERWRITE_YAML, data['message'])
+
+    def test_should_manage_repo_with_no_statiki_files(self):
+        # Given/When
+        false = Mock(return_value=False)
+        with self.logged_in('punchagan'):
+            with patch('github_utils.GitHubUtils.exists', false):
+                response = self.app.post(
+                    '/create_repo', data={'repo_name': 'statiki'}
+                )
+
+        # Then
+        data = json.loads(response.data)
+        self.assertFalse(data['created'])
+        self.assertTrue(data['exists'])
+        self.assertFalse(data['overwrite'])
+        self.assertEqual(messages.REPO_EXISTS, data['message'])
 
     def test_should_manage_this_repo(self):
         # Given
@@ -182,11 +235,24 @@ class TestStatiki(unittest.TestCase):
         with self.logged_in('punchagan'):
             with patch(target, Mock(return_value=1779263)):
                 response = self.app.post(
-                    '/manage', data={'repo_name': 'statiki'}
+                    '/manage', data={'full_name': 'punchagan/statiki'}
                 )
 
         # Then
         self.assertEqual(200, response.status_code)
+
+    def test_should_handle_sync_failure(self):
+        # Given/When
+        with self.logged_in('punchagan'):
+            response = self.app.post(
+                '/manage', data={'full_name': 'punchagan/foo'}
+            )
+
+        # Then
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            messages.NO_SUCH_REPO_FOUND, json.loads(response.data)['message']
+        )
 
     def test_should_get_status(self):
         # When
@@ -202,6 +268,16 @@ class TestStatiki(unittest.TestCase):
 
         # Then
         self.assertEqual(200, response.status_code)
+
+    def test_should_show_only_username_when_printed(self):
+        # Given
+        fred = statiki.User('fred', GH_TOKEN)
+
+        # /When
+        # with statiki.app.test_request_context():
+        user_str = '%s' % fred
+
+        self.assertEqual("<User 'fred'>", user_str)
 
     #### Private protocol #####################################################
 
@@ -228,12 +304,14 @@ class TestStatiki(unittest.TestCase):
         with patch('statiki.github', Mock(spec=OAuth2Service)) as gh:
             gh.get_auth_session = Mock(return_value=data)
 
-            yield self.app.get('/authorized?code="bazooka"')
+            try:
+                yield self.app.get('/authorized?code="bazooka"')
 
-        if travis_user:
-            travis_patch.stop()
+            finally:
+                if travis_user:
+                    travis_patch.stop()
 
-        self.app.get('/logout')
+                self.app.get('/logout')
 
 
 if __name__ == '__main__':

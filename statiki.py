@@ -127,6 +127,7 @@ def index():
         'user': current_user,
         'SITE': SITE,
         'DESCRIPTION': DESCRIPTION,
+        'TUTORIAL_STEPS': messages.TUTORIAL_STEPS
     }
     return render_template('index.html', **context)
 
@@ -195,11 +196,9 @@ def create_repo():
 
     if len(repo_name) > 0:
         full_name = '%s/%s' % (current_user.username, repo_name)
-        user_pages = False
 
     else:
         full_name = '{0}/{0}.github.io'.format(current_user.username)
-        user_pages = True
 
     created = exists = overwrite = False
 
@@ -229,9 +228,7 @@ def create_repo():
     }
 
     if exists or created:
-        data['content'] = get_travis_files_content(
-            full_name, github_token, user_pages
-        )
+        data['contents'] = get_travis_files_content(full_name, github_token)
 
     return jsonify(data)
 
@@ -242,7 +239,13 @@ def create_repo():
 def manage():
 
     full_name = request.form.get('full_name', '')
-    repo_name = full_name.split('/', 1)[-1]
+
+    if GitHubUtils.is_user_pages(full_name):
+        repo_name = ''
+
+    else:
+        _, repo_name = full_name.split('/', 1)
+
     github_token = current_user.github_token
     travis_token = current_user.travis_token
 
@@ -332,7 +335,7 @@ def get_display_response(enabled, created):
     return response
 
 
-def get_travis_files_content(full_name, github_token, user_pages=False):
+def get_travis_files_content(full_name, github_token):
     """ Return the content of the files that will be committed to the repo. """
 
     info         = {
@@ -340,6 +343,8 @@ def get_travis_files_content(full_name, github_token, user_pages=False):
         'GIT_EMAIL': GIT_EMAIL,
         'GH_TOKEN': github_token
     }
+
+    user_pages   = GitHubUtils.is_user_pages(full_name)
 
     travis_files = [
         {

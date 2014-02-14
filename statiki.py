@@ -368,6 +368,38 @@ def get_travis_files_content(full_name, github_token):
 
 #### Standalone ###############################################################
 
+# fixme: remove. Just there to fix the javascript.
+# Should be refactored to do some javascript tests, somehow.
+@app.route('/test', methods=['POST'])
+def test():
+
+    full_name = request.form.get('full_name', '')
+
+    if full_name:
+        # send a different response
+        username, repo_name = full_name.split('/', 1)
+        if repo_name in ('%s.github.io' % username,  '%s.github.com' % username):
+            repo_name = ''
+        data = {
+            'message': messages.DONE % dict(USER=current_user.username, REPO=repo_name)
+        }
+
+    else:
+        data = {
+            'exists': True,
+            'created': False,
+            'overwrite': False,
+            'message': messages.REPO_EXISTS,
+            'contents': {
+                '.travis.yml': 'what is this?',
+                'blah.sh': 'more what? what? what?'
+            },
+            'full_name': 'punchagan/punchagan.github.io',
+        }
+
+    return jsonify(data)
+
+
 if __name__ == '__main__':
     db.create_all()  # pragma: no cover
     app.run(host='0.0.0.0')  # pragma: no cover

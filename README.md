@@ -24,9 +24,10 @@ The name statiki is combination of static (from static-sites) and iki
 
 ## Current Status ##
 
-Currently, `statiki` can only enable automatic publishing for URLs like
-`http://<username>.github.io/<reponame>`.  Existing repositories,
-can also be managed by statiki (if they don't already have a .travis.yml file)
+Currently, `statiki` can only enable automatic publishing for user
+repositories. (URLs of the type `http://<username>.github.io/` or
+`http://<username>.github.io/<reponame>`).  Existing repositories, can
+also be managed by statiki.
 
 Statiki initializes a demo nikola site (checks for conf.py if the repository
 is an old, existing one), and publishes the output.

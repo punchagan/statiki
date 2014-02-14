@@ -145,6 +145,22 @@ class TestTravisUtils(unittest.TestCase):
         data = yaml.load(contents)
         self.assertIn('deploy', data['branches']['only'])
 
+    def test_should_get_yaml_contents_for_unknown_repo(self):
+        # When
+        git_info = {
+            'GH_TOKEN': GH_TOKEN,
+            'GIT_NAME': 'Travis CI',
+            'GIT_EMAIL': 'bogus@travis-ci.org'
+        }
+        script_name = 'bazooka.sh'
+        contents = TravisUtils.get_yaml_contents(
+            'punchagan/unknown', script_name, git_info, user_pages=True
+        )
+
+        # Then
+        data = yaml.load(contents)
+        self.assertIn('deploy', data['branches']['only'])
+
     def test_should_get_script_contents(self):
         # When/Then
         content = TravisUtils.get_script_contents()

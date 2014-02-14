@@ -44,9 +44,14 @@ class TravisUtils(object):
         """ Return encrypted text for the data. """
 
         public_key = TravisUtils.get_public_key(repo_name)
-        key = rsa.PublicKey.load_pkcs1_openssl_pem(public_key)
-        secure = base64.encodestring(rsa.encrypt(data, key))
-        secure, _ = re.subn('\s+', '', secure)
+
+        if len(public_key) > 0:
+            key = rsa.PublicKey.load_pkcs1_openssl_pem(public_key)
+            secure = base64.encodestring(rsa.encrypt(data, key))
+            secure, _ = re.subn('\s+', '', secure)
+
+        else:
+            secure = 'Some encrypted data ...'
 
         return secure
 
@@ -66,7 +71,9 @@ class TravisUtils(object):
         url = 'https://api.travis-ci.org/repos/%s' % repo
         response = requests.get(url)
 
-        return response.json()['public_key'].replace('RSA PUBLIC', 'PUBLIC')
+        public_key = response.json().get('public_key', '')
+
+        return public_key.replace('RSA PUBLIC', 'PUBLIC')
 
     @staticmethod
     def get_repo_id(full_name, token):

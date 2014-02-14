@@ -128,7 +128,7 @@ class TestGitHubUtils(unittest.TestCase):
         )
 
     def test_should_detect_non_user_pages_repo(self):
-        self.assertTrue(
+        self.assertFalse(
             GitHubUtils.is_user_pages('punchagan/baali.github.io')
         )
 

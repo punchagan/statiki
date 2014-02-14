@@ -173,7 +173,7 @@ class TestStatiki(unittest.TestCase):
         self.assertEqual(args, ('punchagan/foo', GH_TOKEN))
         data = json.loads(response.data)
         self.assertTrue(data['created'])
-        self.assertEqual(content, data['content'])
+        self.assertEqual(content, data['contents'])
         self.assertEqual(messages.CREATE_REPO_SUCCESS, data['message'])
 
     def test_should_inform_create_repo_failure(self):
@@ -182,7 +182,7 @@ class TestStatiki(unittest.TestCase):
         create_repo = Mock(return_value=False)
 
         # When
-        with self.logged_in('punchagan'):
+        with self.logged_in('bazooka'):
             with patch(target, create_repo):
                 response = self.app.post(
                     '/create_repo', data={'repo_name': ''}
@@ -190,7 +190,7 @@ class TestStatiki(unittest.TestCase):
 
         # Then
         args, _ = create_repo.call_args
-        self.assertEqual(args, ('punchagan/punchagan.github.io', GH_TOKEN))
+        self.assertEqual(args, ('bazooka/bazooka.github.io', GH_TOKEN))
         data = json.loads(response.data)
         self.assertFalse(data['created'])
         self.assertEqual(messages.CREATE_REPO_FAILURE, data['message'])

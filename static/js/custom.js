@@ -80,11 +80,28 @@ var show_form = function(){
 }
 
 var show_dialog = function(message, contents, overwrite, full_name) {
-  var html='';
-  contents.forEach(function(file) {
-    html+= '<h2>' + file.name + '</h2>';
-    html+= '<div class="box"><pre>' + file.content + '</pre></div>';
+
+  var html= '<p>(Click on the file names to view the contents)</p>';
+
+  html += '<div class="panel-group">';
+
+  contents.forEach(function(file, idx) {
+    id = 'collapse' + idx;
+    html+= '<div class="panel panel-default">';
+
+    html+= '<div class="panel-heading">';
+    html+= '<h4 class="panel-title">';
+    html+= '<a data-toggle="collapse" data-parent="#accordion" href="#' + id + '">';
+    html+= file.name + '</a>' + '</h4>' + '</div>';
+
+    html+= '<div id="' + id + '" class="panel-collapse collapse">';
+    html+= '<div class="panel-body">';
+    html+= '<pre>' + file.content + '</pre>';
+    html+= '</div>' + '</div>';
+
+    html+='</div>';
   });
+  html+='</div>';
 
   bootbox.dialog({
     message: html,

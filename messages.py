@@ -39,12 +39,12 @@ ONLY_HOOKS_ENABLED = (
 
 OVERWRITE_YAML = (
     'Your project already seems to have a .travis.yml file. Do you wish to '
-    'overwrite it?'
+    'overwrite it, with these contents?'
 )
 
 REPO_EXISTS = (
-    'The repository you specified, already exists. Do you want to add a '
-    '.travis.yml file?'
+    'The repository you specified, already exists. Statiki will add the '
+    'following files to your repository. Continue?'
 )
 
 TOTAL_FAILURE = (

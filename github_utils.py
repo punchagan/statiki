@@ -62,10 +62,14 @@ class GitHubUtils(object):
 
         url = 'https://api.github.com/user/repos'
         headers = GitHubUtils.get_header(token)
+        homepage = (
+            name if GitHubUtils.is_user_pages(full_name)
+            else 'http://%s.github.io/%s' % (user, name)
+        )
         payload = {
             'name': name,
             'description': 'Website using Nikola, created from statiki',
-            'homepage': 'http://%s.github.io/%s' % (user, name),
+            'homepage': homepage,
             'private': False,
             'has_issues': False,
             'has_wiki': False,

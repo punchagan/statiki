@@ -27,11 +27,13 @@ class GitHubUtils(object):
             url = 'https://api.github.com/' + url
 
             headers = GitHubUtils.get_header(token)
+            branch = 'deploy' if GitHubUtils.is_user_pages(repo) else 'master'
 
             payload = {
                 'path': path,
                 'message': 'Adding %s (from statiki).' % path,
                 'content': base64.standard_b64encode(content),
+                'branch': branch
             }
 
             if extra_payload is not None:

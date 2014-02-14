@@ -132,3 +132,13 @@ class GitHubUtils(object):
         response = requests.get('https://github.com/%s' % full_name)
         return response.status_code == 200
 
+    @staticmethod
+    def is_user_pages(full_name):
+        """ Return True if the repository is a user pages repository. """
+
+        username, repo_name = full_name.split('/', 1)
+
+        return (
+            repo_name.startswith(username)
+            and repo_name.endswith(('github.io', 'github.com'))
+        )

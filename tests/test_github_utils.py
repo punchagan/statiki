@@ -122,6 +122,16 @@ class TestGitHubUtils(unittest.TestCase):
             'all systems operational', GitHubUtils.get_status().lower()
         )
 
+    def test_should_detect_user_pages_repo(self):
+        self.assertTrue(
+            GitHubUtils.is_user_pages('punchagan/punchagan.github.io')
+        )
+
+    def test_should_detect_non_user_pages_repo(self):
+        self.assertTrue(
+            GitHubUtils.is_user_pages('punchagan/baali.github.io')
+        )
+
     #### Private protocol #####################################################
 
     def _get_random_string(self, length=40):

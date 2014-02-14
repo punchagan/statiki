@@ -21,34 +21,29 @@ class GitHubUtils(object):
     def commit(path, content, repo, token, extra_payload=None):
         """ Commit the given content to the given path in a repository. """
 
-        if not GitHubUtils.exists(repo, path, token):
+        branch = 'deploy' if GitHubUtils.is_user_pages(repo) else 'master'
+        headers = GitHubUtils.get_header(token)
+        payload = {
+            'path': path,
+            'message': 'Adding %s (from statiki).' % path,
+            'content': base64.standard_b64encode(content),
+            'branch': branch
+        }
 
-            url = 'repos/%s/contents/%s' % (repo, path)
-            url = 'https://api.github.com/' + url
+        if extra_payload is not None:
+            payload.update(extra_payload)
 
-            headers = GitHubUtils.get_header(token)
-            branch = 'deploy' if GitHubUtils.is_user_pages(repo) else 'master'
+        sha = GitHubUtils.exists(repo, path, token)
+        if sha is not None:
+            payload['sha'] = sha
 
-            payload = {
-                'path': path,
-                'message': 'Adding %s (from statiki).' % path,
-                'content': base64.standard_b64encode(content),
-                'branch': branch
-            }
+        url = 'https://api.github.com/repos/%s/contents/%s' % (repo, path)
 
-            if extra_payload is not None:
-                payload.update(extra_payload)
+        response = requests.put(
+            url, data=json.dumps(payload), headers=headers
+        )
 
-            response = requests.put(
-                url, data=json.dumps(payload), headers=headers
-            )
-
-            committed = response.status_code == 201
-
-        else:
-            committed = False
-
-        return committed
+        return response.ok
 
     @staticmethod
     def create_new_repository(full_name, token):
@@ -86,14 +81,22 @@ class GitHubUtils(object):
 
     @staticmethod
     def exists(full_name, path, token):
-        """ Return True if the given repository has the given path. """
+        """ Return the sha of a path in a repo, if it exists; else None. """
 
         headers = GitHubUtils.get_header(token)
 
         url = 'repos/%s/contents/%s' % (full_name, path)
         url = 'https://api.github.com/' + url
 
-        return requests.get(url, headers=headers).status_code == 200
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            sha = json.loads(response.text)['sha']
+
+        else:
+            sha = None
+
+        return sha
 
     @staticmethod
     def get_header(token):

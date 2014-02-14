@@ -75,7 +75,7 @@ class TestGitHubUtils(unittest.TestCase):
         self.assertTrue(committed)
         self.assertTrue(GitHubUtils.exists(full_name, path, GH_TOKEN))
 
-    def test_should_not_commit_to_existing_path(self):
+    def test_should_update_existing_path(self):
         # Given
         full_name = 'punchagan/experiri'
         content = path = self._get_random_string()
@@ -93,7 +93,7 @@ class TestGitHubUtils(unittest.TestCase):
         committed = GitHubUtils.commit(path, content*2, full_name, GH_TOKEN)
 
         # Then
-        self.assertFalse(committed)
+        self.assertTrue(committed)
 
     def test_should_create_new_repository(self):
         # Given

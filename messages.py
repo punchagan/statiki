@@ -93,7 +93,7 @@ TUTORIAL_STEPS = [
         'title': 'Choose a URL and Go!',
         'description': (
             '<p>Currently, only urls starting with <code>'
-            'http://&lt;your-username&gt;.github.io/</code> are supported. '
+            'http://&lt;username&gt;.github.io/</code> are supported. '
             'In future, repositories in organizations may be supported</p>'
             '<p><em>NOTE: RSS feeds/Galleries may not work correctly, '
             'due to an issue in Nikola.</em> </p>'

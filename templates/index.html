@@ -50,8 +50,8 @@
         <hr class="half-rule">
 
         {% for STEP in TUTORIAL_STEPS %}
-        <div class="row step">
-            <div class="col-sm-4 col-sm-offset-4">
+        <div class="row">
+            <div class="col-sm-4 col-sm-offset-4 step">
                 <h3>{{STEP['title']|safe}}</h3>
                 {{STEP['description']|safe}}
             </div>

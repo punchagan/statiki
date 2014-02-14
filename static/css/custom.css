@@ -1155,3 +1155,10 @@ h1[id] {
 .css .o, .css .o+.nt, .css .nt+.nt {
     color: #999;
 }
+
+/* Tutorial step */
+.step {
+    border: lightgrey solid 1px;
+    padding-top: 2em;
+    padding-bottom: 2em;
+}

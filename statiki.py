@@ -240,11 +240,10 @@ def manage():
 
     full_name = request.form.get('full_name', '')
 
-    if GitHubUtils.is_user_pages(full_name):
-        repo_name = ''
-
-    else:
-        _, repo_name = full_name.split('/', 1)
+    repo_name = (
+        '' if GitHubUtils.is_user_pages(full_name)
+        else full_name.split('/', 1)[-1]
+    )
 
     github_token = current_user.github_token
     travis_token = current_user.travis_token

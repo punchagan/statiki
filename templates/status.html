@@ -2,6 +2,7 @@
 
 
 {% block content %}
+<div class="container">
 
    We depend on TravisCI and GitHub, for our services.  So, it'd be useful
    to aggregate their status here, I guess.
@@ -14,4 +15,6 @@
    <div class="up-status">
        <a href="http://status.travis-ci.com">{{ TRAVIS_STATUS | safe }}</a>
    </div>
+
+</div>
 {% endblock %}

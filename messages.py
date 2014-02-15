@@ -77,8 +77,7 @@ TUTORIAL_STEPS = [
 
     {
         'title': (
-            'Create an account on <a href="{{ url_for(\'login\') }}" '
-            'target="_blank">Statiki</a>'
+            'Create an account on <a href="/login" target="_blank">Statiki</a>'
         ),
         'description': (
             '<p>Statiki only uses your authentication to manage the '

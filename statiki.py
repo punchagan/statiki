@@ -241,7 +241,7 @@ def create_repo():
         ]
 
         context = {
-            'FILES': get_travis_files_content(full_name, github_token),
+            'FILES': get_travis_files_content(full_name, github_token, {}),
             'message': message,
             'SAMPLE_CONF': SAMPLE_CONF
         }
@@ -257,7 +257,6 @@ def create_repo():
 def manage():
 
     full_name = request.form.get('full_name', '')
-    # fixme: data is not used currently
     data = parse_qs(request.form.get('data', ''))
 
     repo_name = (
@@ -279,7 +278,7 @@ def manage():
         return jsonify(dict(message=message))
 
     enabled = TravisUtils.enable_hook(repo_id, travis_token)
-    created = create_travis_files(full_name, github_token)
+    created = create_travis_files(full_name, github_token, data)
 
     response = get_display_response(enabled, created)
     response['message'] %= dict(USER=current_user.username, REPO=repo_name)
@@ -302,12 +301,12 @@ def show_status():
 
 #### Helper functions #########################################################
 
-def create_travis_files(full_name, github_token):
+def create_travis_files(full_name, github_token, config):
     """ Create the files required for Travis CI hooks to work. """
 
     created      = {}
 
-    travis_files = get_travis_files_content(full_name, github_token)
+    travis_files = get_travis_files_content(full_name, github_token, config)
 
     for file_ in travis_files:
         name          = file_['name']
@@ -354,7 +353,7 @@ def get_display_response(enabled, created):
     return response
 
 
-def get_travis_files_content(full_name, github_token):
+def get_travis_files_content(full_name, github_token, config):
     """ Return the content of the files that will be committed to the repo. """
 
     info         = {
@@ -368,7 +367,7 @@ def get_travis_files_content(full_name, github_token):
     travis_files = [
         {
             'name': SCRIPT,
-            'content': TravisUtils.get_script_contents(SCRIPT),
+            'content': TravisUtils.get_script_contents(SCRIPT, config),
             'message': (
                 'Add build and deploy script (via Statiki).\n\n[skip ci]'
             ),

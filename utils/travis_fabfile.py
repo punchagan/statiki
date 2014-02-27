@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
+
 """ A fabric file for deploying the site from TravisCI. """
 
 import os
 
 from fabric.api import local, settings
+
+
+DATA = {}
 
 
 def build_and_deploy():
@@ -29,21 +34,15 @@ def git_config_setup():
 def init_site():
     """ Initialize a nikola demo site. """
 
-    # fixme: Do this programatically with values suppplied by user!
-    local('nikola init --demo demo', capture=True)
-    local('mv demo/* .')
+    from nikola.plugins.command.init import CommandInit
+
+    i = CommandInit()
+    i.SAMPLE_CONF['SITE_URL'] = _get_site_url()
+    i.SAMPLE_CONF.update(DATA)
+    i.execute({'demo': True}, ['demo'])
+
+    local('mv demo/* . && rmdir demo')
     local('touch files/.nojekyll')
-
-    ## Fix the config file
-    ## In future, should let users choose an theme, etc!
-    #function fix_nikola_config(){
-    #
-    #    GH_USER=`echo $REPO | cut -d "/" -f 1`
-    #    REPO_NAME=`echo $REPO | cut -d "/" -f 2`
-    #    sed -i 's$^SITE_URL.*$SITE_URL = "http://'$GH_USER'.github.io/'$REPO_NAME'"$g' conf.py
-    #
-    #}
-
 
 
 def populate_source():
@@ -101,6 +100,23 @@ def _get_output_branch():
     return 'master' if _user_pages() else 'gh-pages'
 
 
+def _get_repo_name():
+    repo_slug = os.environ.get('TRAVIS_REPO_SLUG', '/')
+    user, repo = repo_slug.split('/')
+    return user, repo
+
+
+def _get_site_url():
+    user, repo = _get_repo_name()
+    if _user_pages():
+        site_url = 'http://%s.github.io/' % user
+
+    else:
+        site_url = 'http://%s.github.io/%s' % (user, repo)
+
+    return site_url
+
+
 def _git_commit_all():
     """ Commit all the changes to the repo. """
 
@@ -129,8 +145,7 @@ def _git_push(branch):
 
 
 def _user_pages():
-    repo_slug = os.environ.get('TRAVIS_REPO_SLUG', '/')
-    user, repo = repo_slug.split('/')
+    user, repo = _get_repo_name()
 
     if repo.startswith(user) and repo.endswith(('github.io', 'github.com')):
         user_pages = True

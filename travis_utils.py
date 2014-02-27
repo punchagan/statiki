@@ -90,11 +90,17 @@ class TravisUtils(object):
         return repo_id
 
     @staticmethod
-    def get_script_contents(script_name):
+    def get_script_contents(script_name, config=None):
         """ Get the contents of the script to be run on travis. """
 
         with open(join(dirname(__file__), 'utils', script_name)) as f:
             contents = f.read()
+
+        if config:
+            from pprint import pformat
+            contents = contents.replace(
+                'DATA = {}', 'DATA = %s' % pformat(config)
+            )
 
         return contents
 

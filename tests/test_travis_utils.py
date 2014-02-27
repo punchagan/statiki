@@ -110,14 +110,26 @@ class TestTravisUtils(unittest.TestCase):
         TravisUtils.get_encrypted_text(THIS_REPO, data)
         # No idea what to test!  This test just checks for runtime errors.
 
-    def test_should_get_yaml_contents(self):
+    def test_should_get_script_contents(self):
+        # Given
+        config = {'BLOG_TITLE': 'foo'}
+
         # When
+        content = TravisUtils.get_script_contents('travis_fabfile.py', config)
+
+        # Then
+        self.assertIn('BLOG_TITLE', content)
+
+    def test_should_get_yaml_contents(self):
+        # Given
         git_user_info = {
             'GH_TOKEN': GH_TOKEN,
             'GIT_NAME': 'Travis CI',
             'GIT_EMAIL': 'bogus@travis-ci.org'
         }
         script_name = 'fabfile.py'
+
+        # When
         contents = TravisUtils.get_yaml_contents(
             THIS_REPO, script_name, git_user_info
         )

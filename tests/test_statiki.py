@@ -48,7 +48,7 @@ class TestStatiki(unittest.TestCase):
 
         # When
         with patch('github_utils.GitHubUtils.commit', true) as commit:
-            created = statiki.create_travis_files(THIS_REPO, GH_TOKEN)
+            created = statiki.create_travis_files(THIS_REPO, GH_TOKEN, {})
 
         # Then
         args, _ = commit.call_args

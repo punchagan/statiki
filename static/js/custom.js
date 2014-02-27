@@ -29,11 +29,7 @@ var continue_to_manage_step = function(created, exists, overwrite, full_name, me
     return;
   }
 
-  if (created) {
-    configure_travis(overwrite, full_name);
-  } else {
-    show_dialog(message, contents, overwrite, full_name);
-  }
+  show_dialog(message, contents, overwrite, full_name);
 
 };
 
@@ -93,6 +89,7 @@ var show_dialog = function(message, contents, overwrite, full_name) {
         callback: function(){
           configure_travis(overwrite, full_name);
           show_form();
+          post_success({'message': message});
         }
       },
       'Cancel': {

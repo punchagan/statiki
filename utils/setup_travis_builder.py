@@ -35,7 +35,7 @@ import requests
 # Local library
 from travis_utils import TravisUtils
 
-SCRIPT = './travis_build_n_deploy.sh'
+SCRIPT = './travis_fabfile.py'
 GIT_NAME = 'Statiki'
 GIT_EMAIL = 'noreply@statiki.herokuapp.com'
 # fixme: currently writes to some dumb path. Use .gitconfig?

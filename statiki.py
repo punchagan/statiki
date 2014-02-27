@@ -27,7 +27,7 @@ from github_utils import GitHubUtils
 from travis_utils import TravisUtils
 
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
-SCRIPT = 'travis_build_n_deploy.sh'
+SCRIPT = 'travis_fabfile.py'
 HERE = dirname(abspath(__file__))
 SITE = 'Statiki'
 DESCRIPTION = 'An easy-to-use service for deploying simple web-sites'
@@ -368,7 +368,7 @@ def get_travis_files_content(full_name, github_token):
     travis_files = [
         {
             'name': SCRIPT,
-            'content': TravisUtils.get_script_contents(user_pages),
+            'content': TravisUtils.get_script_contents(SCRIPT),
             'message': (
                 'Add build and deploy script (via Statiki).\n\n[skip ci]'
             ),

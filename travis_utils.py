@@ -90,18 +90,11 @@ class TravisUtils(object):
         return repo_id
 
     @staticmethod
-    def get_script_contents(user_pages=False):
+    def get_script_contents(script_name):
         """ Get the contents of the script to be run on travis. """
 
-        template = join(
-            dirname(__file__), 'utils', 'travis_script_template.sh'
-        )
-        with open(template) as f:
+        with open(join(dirname(__file__), 'utils', script_name)) as f:
             contents = f.read()
-
-        if user_pages:
-            contents = contents.replace('OUTPUT=gh-pages', 'OUTPUT=master')
-            contents = contents.replace('SOURCE=master', 'SOURCE=deploy')
 
         return contents
 
@@ -134,12 +127,12 @@ class TravisUtils(object):
                 'unzip v2.7.zip',
                 'pip install --use-wheel --no-index --find-links=wheelhouse-2.7 lxml Pillow',
                 'rm -rf wheelhouse-2.7 v2.7.zip',
-                'pip install nikola webassets',
+                'pip install fabric nikola webassets',
             ],
             'branches': {'only': [branch]},
             'language': 'python',
             'python': ['2.7'],
-            'script': 'bash %s' % script_name,
+            'script': 'fab -f %s main' % script_name,
         }
 
         return yaml.dump(config)

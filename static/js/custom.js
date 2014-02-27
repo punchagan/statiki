@@ -38,8 +38,10 @@ var continue_to_manage_step = function(created, exists, overwrite, full_name, me
 };
 
 var configure_travis = function(overwrite, full_name){
+    var form_data = $('#config').serialize();
     var xhr = $.post(
-      '/manage', {'overwrite': overwrite, 'full_name': full_name}
+      '/manage',
+      {'overwrite': overwrite, 'full_name': full_name, 'data': form_data}
     );
 
     xhr.success(post_success).fail(post_failure);
@@ -81,31 +83,9 @@ var show_form = function(){
 
 var show_dialog = function(message, contents, overwrite, full_name) {
 
-  var html= '<p>(Click on the file names to view the contents)</p>';
-
-  html += '<div class="panel-group">';
-
-  contents.forEach(function(file, idx) {
-    id = 'collapse' + idx;
-    html+= '<div class="panel panel-default">';
-
-    html+= '<div class="panel-heading">';
-    html+= '<h4 class="panel-title">';
-    html+= '<a data-toggle="collapse" data-parent="#accordion" href="#' + id + '">';
-    html+= file.name + '</a>' + '</h4>' + '</div>';
-
-    html+= '<div id="' + id + '" class="panel-collapse collapse">';
-    html+= '<div class="panel-body">';
-    html+= '<pre>' + file.content + '</pre>';
-    html+= '</div>' + '</div>';
-
-    html+='</div>';
-  });
-  html+='</div>';
-
   bootbox.dialog({
-    message: html,
-    title: '<p>' + message + '</p>',
+    message: contents,
+    title: '<p>Configure your blog...</p>',
     buttons: {
       success: {
         label: overwrite?'Overwrite':'Publish',

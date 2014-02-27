@@ -8,6 +8,7 @@
 # Standard library.
 from functools import wraps
 from os.path import abspath, dirname, join
+from urlparse import parse_qs
 
 # 3rd party library.
 from flask import (
@@ -228,7 +229,24 @@ def create_repo():
     }
 
     if exists or created:
-        data['contents'] = get_travis_files_content(full_name, github_token)
+
+        SAMPLE_CONF = [
+            ('BLOG_AUTHOR',  "Your Name"),
+            ('BLOG_TITLE', "Demo Site"),
+            # ('SITE_URL', "http://getnikola.com/"),
+            ('BLOG_EMAIL', "joe@demo.site"),
+            ('BLOG_DESCRIPTION', "This is a demo site for Nikola."),
+            # ('DEFAULT_LANG', "en"),
+            # ('THEME', 'bootstrap3'),
+        ]
+
+        context = {
+            'FILES': get_travis_files_content(full_name, github_token),
+            'message': message,
+            'SAMPLE_CONF': SAMPLE_CONF
+        }
+
+        data['contents'] = render_template('form.html', **context)
 
     return jsonify(data)
 
@@ -239,6 +257,8 @@ def create_repo():
 def manage():
 
     full_name = request.form.get('full_name', '')
+    # fixme: data is not used currently
+    data = parse_qs(request.form.get('data', ''))
 
     repo_name = (
         '' if GitHubUtils.is_user_pages(full_name)
@@ -350,8 +370,7 @@ def get_travis_files_content(full_name, github_token):
             'name': SCRIPT,
             'content': TravisUtils.get_script_contents(user_pages),
             'message': (
-                'Add build and deploy script (via Statiki).\n\n'
-                '[skip ci]'
+                'Add build and deploy script (via Statiki).\n\n[skip ci]'
             ),
         },
         {

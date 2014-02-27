@@ -1,0 +1,37 @@
+<div class="panel-group">
+
+    <form id="config" class="form-horizontal" role="form">
+
+        {% for field, placeholder in SAMPLE_CONF %}
+        <div class="form-group">
+            <label for="{{field}}" class="col-sm-4 control-label">{{field}}</label>
+            <div class="col-sm-6">
+                <input type="text" class="form-control" id="{{field}}" name="{{field}}" placeholder="{{placeholder}}" required>
+            </div>
+        </div>
+        {% endfor %}
+
+    </form>
+
+    <p>{{ message }}</p>
+    <p>(Click on the file names to view the contents)</p>
+
+    <div class="panel panel-default">
+        {% for f in FILES %}
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapse{{loop.index0}}"> {{ f['name'] }} </a>
+            </h4>
+        </div>
+
+        <div id="collapse{{loop.index0}}" class="panel-collapse collapse">
+            <div class="panel-body">
+                <pre> {{ f['content'] }} </pre>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+
+</div>
+

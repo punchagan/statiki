@@ -44,7 +44,7 @@ OVERWRITE_YAML = (
 
 REPO_EXISTS = (
     'The repository you specified, already exists. Statiki will add the '
-    'following files to your repository. Continue?'
+    'following files to your repository.'
 )
 
 TOTAL_FAILURE = (

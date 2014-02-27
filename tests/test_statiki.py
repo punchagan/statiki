@@ -157,7 +157,7 @@ class TestStatiki(unittest.TestCase):
     def test_should_create_repo(self):
         # Given
         target = 'github_utils.GitHubUtils.create_new_repository'
-        content = {'foo': 'bar'}
+        content = [{'name': 'bazooka', 'content': 'bar', 'message': ''}]
         get_content = Mock(return_value=content)
 
         # When
@@ -173,7 +173,8 @@ class TestStatiki(unittest.TestCase):
         self.assertEqual(args, ('punchagan/foo', GH_TOKEN))
         data = json.loads(response.data)
         self.assertTrue(data['created'])
-        self.assertEqual(content, data['contents'])
+        self.assertIn('bazooka', data['contents'])
+        self.assertIn('bar', data['contents'])
         self.assertEqual(messages.CREATE_REPO_SUCCESS, data['message'])
 
     def test_should_inform_create_repo_failure(self):

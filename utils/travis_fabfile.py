@@ -55,7 +55,7 @@ def populate_source():
 
     local('git checkout %s' % branch)
     init_site()
-    _git_commit_all()
+    _git_commit_all('Initial commit\n[skip ci]')
     _git_push(branch)
 
 
@@ -117,7 +117,7 @@ def _get_site_url():
     return site_url
 
 
-def _git_commit_all():
+def _git_commit_all(message=''):
     """ Commit all the changes to the repo. """
 
     # Remove deleted files
@@ -131,7 +131,9 @@ def _git_commit_all():
 
     # Commit
     with settings(warn_only=True):
-        local('git commit -m "$(date)"')
+        if not message:
+            message = "$(date)"
+        local('git commit -m %s' % message)
 
 
 def _git_push(branch):

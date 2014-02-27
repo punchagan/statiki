@@ -8,7 +8,7 @@
 # Standard library.
 from functools import wraps
 from os.path import abspath, dirname, join
-from urlparse import parse_qs
+from urlparse import parse_qsl
 
 # 3rd party library.
 from flask import (
@@ -257,7 +257,7 @@ def create_repo():
 def manage():
 
     full_name = request.form.get('full_name', '')
-    data = parse_qs(request.form.get('data', ''))
+    data = dict(parse_qsl(request.form.get('data', '')))
 
     repo_name = (
         '' if GitHubUtils.is_user_pages(full_name)

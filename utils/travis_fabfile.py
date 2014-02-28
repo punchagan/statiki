@@ -34,12 +34,12 @@ def git_config_setup():
 def init_site():
     """ Initialize a nikola demo site. """
 
-    from nikola.plugins.command.init import CommandInit
+    from nikola.plugins.command.init import CommandInit, SAMPLE_CONF
 
-    i = CommandInit()
-    i.SAMPLE_CONF['SITE_URL'] = _get_site_url()
-    i.SAMPLE_CONF.update(DATA)
-    i.execute({'demo': True}, ['demo'])
+    command = CommandInit()
+    SAMPLE_CONF['SITE_URL'] = _get_site_url()
+    SAMPLE_CONF.update(DATA)
+    command.execute({'demo': True}, ['demo'])
 
     local('mv demo/* . && rmdir demo')
     local('touch files/.nojekyll')

@@ -236,6 +236,8 @@ def create_repo():
             # ('SITE_URL', "http://getnikola.com/"),
             ('BLOG_EMAIL', "joe@demo.site"),
             ('BLOG_DESCRIPTION', "This is a demo site for Nikola."),
+            ('COMMENT_SYSTEM', 'disqus'),
+            ('COMMENT_SYSTEM_ID', 'nikolademo'),
             # ('DEFAULT_LANG', "en"),
             # ('THEME', 'bootstrap3'),
         ]

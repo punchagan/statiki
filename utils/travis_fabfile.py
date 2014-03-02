@@ -4,7 +4,7 @@
 
 import os
 
-from fabric.api import local, settings
+from fabric.api import local, settings, shell_env
 
 
 DATA = {}
@@ -13,10 +13,11 @@ DATA = {}
 def build_and_deploy():
     """ Build and deploy the output. """
 
-    _create_output_branch()
-    _build_html()
-    _git_commit_all()
-    _git_push(_get_output_branch())
+    with shell_env(TZ=_get_timezone()):
+        _create_output_branch()
+        _build_html()
+        _git_commit_all()
+        _git_push(_get_output_branch())
 
 
 def git_config_setup():
@@ -92,10 +93,6 @@ def _create_output_branch():
     local('git checkout --orphan %s' % branch)
 
 
-def _get_source_branch():
-    return 'deploy' if _user_pages() else 'master'
-
-
 def _get_output_branch():
     return 'master' if _user_pages() else 'gh-pages'
 
@@ -104,6 +101,10 @@ def _get_repo_name():
     repo_slug = os.environ.get('TRAVIS_REPO_SLUG', '/')
     user, repo = repo_slug.split('/')
     return user, repo
+
+
+def _get_source_branch():
+    return 'deploy' if _user_pages() else 'master'
 
 
 def _get_site_url():
@@ -115,6 +116,17 @@ def _get_site_url():
         site_url = 'http://%s.github.io/%s' % (user, repo)
 
     return site_url
+
+
+def _get_timezone():
+    if not os.path.exists('conf.py'):
+        timezone = 'UTC'
+    else:
+        ns = {}
+        execfile('conf.py', ns)
+        timezone = ns.get('TIMEZONE', 'UTC')
+
+    return timezone
 
 
 def _git_commit_all(message=''):

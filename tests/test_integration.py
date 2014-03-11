@@ -18,6 +18,8 @@ import yaml
 
 import statiki
 
+TEST_REPO = 'punchagan/experiri'
+
 
 class TestIntegration(unittest.TestCase):
     """ Integration tests for statiki. """
@@ -64,6 +66,27 @@ class TestIntegration(unittest.TestCase):
 
         return
 
+    def test_should_populate_repo(self):
+        # Given
+        script = self._get_yaml_content()['script']
+        install_steps = self._get_install_steps()
+        for command in install_steps:
+            subprocess.call(shlex.split(command))
+
+        # When
+        output, error = subprocess.Popen(
+            shlex.split(script),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        ).communicate()
+
+        # Then
+        self.assertIn('git push', output.splitlines()[-1])
+        self.assertTrue(exists(join(self.repo_dir, 'conf.py')))
+        self.assertTrue(exists(join(self.repo_dir, 'files', '.nojekyll')))
+
+        return
+
     #### Private protocol #####################################################
 
     def _activate_venv(self):
@@ -83,9 +106,8 @@ class TestIntegration(unittest.TestCase):
         repo_dir = join(self.temp_dir, 'repo')
         subprocess.check_output(['git', 'init', repo_dir])
 
-        content = statiki.get_travis_files_content(
-            'punchagan/experiri', 'BOGUS', {}
-        )
+        content = statiki.get_travis_files_content(TEST_REPO, 'BOGUS', {})
+
         for info in content:
             path = join(repo_dir, info['name'])
             with open(path, 'w') as f:
@@ -95,6 +117,10 @@ class TestIntegration(unittest.TestCase):
             subprocess.check_output(
                 ['git', 'commit', '-m', '%s' % info['message']],  cwd=repo_dir
             )
+
+        subprocess.check_output(
+            shlex.split('git remote add origin ..'), cwd=repo_dir
+        )
 
         return repo_dir
 
@@ -130,15 +156,24 @@ class TestIntegration(unittest.TestCase):
     def _get_install_steps(self):
         """ Get the install steps defined in the .travis.yml. """
 
+        content = self._get_yaml_content()
+
+        return self._fix_install_steps(content['install'])
+
+    def _get_yaml_content(self):
+        """ Return the contents of the .travis.yml file. """
+
         with open('.travis.yml') as f:
             content = yaml.load(f)
 
-        return self._fix_install_steps(content['install'])
+        return content
 
     def _setup_env(self):
         """ Setup environment variables used by the fabfile. """
 
         os.environ['GIT_NAME'] = statiki.GIT_NAME
         os.environ['GIT_EMAIL'] = statiki.GIT_EMAIL
+        os.environ['GH_TOKEN'] = 'this-is-a-bogus-token:password'
+        os.environ['TRAVIS_REPO_SLUG'] = TEST_REPO
 
         return

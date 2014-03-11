@@ -133,7 +133,7 @@ class TravisUtils(object):
                 'unzip v2.7.zip',
                 'pip install --use-wheel --no-index --find-links=wheelhouse-2.7 lxml Pillow',
                 'rm -rf wheelhouse-2.7 v2.7.zip',
-                'pip install fabric nikola>=6.4.0 webassets',
+                'pip install fabric "nikola>=6.4.0" webassets',
             ],
             'branches': {'only': [branch]},
             'language': 'python',

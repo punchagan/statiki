@@ -53,7 +53,11 @@ class TestIntegration(unittest.TestCase):
 
         # When
         for command in install_steps:
-            subprocess.call(shlex.split(command))
+            subprocess.call(
+                shlex.split(command),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT
+            )
 
         # Then
         nikola_version = subprocess.check_output(
@@ -71,7 +75,11 @@ class TestIntegration(unittest.TestCase):
         script = self._get_yaml_content()['script']
         install_steps = self._get_install_steps()
         for command in install_steps:
-            subprocess.call(shlex.split(command))
+            subprocess.call(
+                shlex.split(command),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT
+            )
 
         # When
         output, error = subprocess.Popen(

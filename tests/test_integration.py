@@ -28,13 +28,13 @@ class TestIntegration(unittest.TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
+        self._setup_env()
         self.repo_dir = self._create_github_repo()
         self.venv_dir = self._create_venv()
         self.old_cwd = os.getcwd()
         self.cache_dir = join(self.old_cwd, 'cache')
         os.chdir(self.repo_dir)
         self._activate_venv()
-        self._setup_env()
 
         return
 
@@ -122,6 +122,15 @@ class TestIntegration(unittest.TestCase):
 
         repo_dir = join(self.temp_dir, 'repo')
         subprocess.check_output(['git', 'init', repo_dir])
+
+        subprocess.check_output(
+            ['git', 'config', 'user.email', os.environ['GIT_EMAIL']],
+            cwd=repo_dir
+        )
+        subprocess.check_output(
+            ['git', 'config', 'user.name', os.environ['GIT_NAME']],
+            cwd=repo_dir
+        )
 
         content = statiki.get_travis_files_content(TEST_REPO, 'BOGUS', {})
 

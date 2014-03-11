@@ -95,6 +95,33 @@ class TestIntegration(unittest.TestCase):
 
         return
 
+    def test_should_build_repo(self):
+        # Given
+        script = self._get_yaml_content()['script']
+        install_steps = self._get_install_steps()
+        install_steps.append('fab -f travis_fabfile.py populate_source')
+        for command in install_steps:
+            subprocess.call(
+                shlex.split(command),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT
+            )
+
+        # When
+        output, error = subprocess.Popen(
+            shlex.split(script),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        ).communicate()
+
+        # Then
+        self.assertIn('git push', output.splitlines()[-1])
+        self.assertIn('* gh-pages', subprocess.check_output(['git', 'branch']))
+        self.assertTrue(exists(join(self.repo_dir, '.nojekyll')))
+
+        return
+
+
     #### Private protocol #####################################################
 
     def _activate_venv(self):

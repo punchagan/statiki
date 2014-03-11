@@ -82,7 +82,8 @@ def _build_html():
 
     ## Remove all the source files, we only want the output!
     local('ls | grep -v output | xargs rm -rf')
-    local('mv output/* .')
+    with settings(warn_only=True):
+        local('mv output/* output/.* .')
 
 
 def _create_output_branch():

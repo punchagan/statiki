@@ -146,7 +146,7 @@ def _git_commit_all(message=''):
     with settings(warn_only=True):
         if not message:
             message = "$(date)"
-        local('git commit -m %s' % message)
+        local('git commit -m "%s"' % message)
 
 
 def _git_push(branch):

@@ -47,7 +47,12 @@ class TestIntegration(unittest.TestCase):
 
     #### Tests ####
 
-    def test_should_run_install_steps(self):
+    def test_should_build_repo(self):
+        # The test tests installing stuff into the venv, populating an empty
+        # repo and building a repo.  Everything is tested in a single test,
+        # since this each test takes so long to run!
+
+        #### test_should_run_install_steps ####
         # Given
         install_steps = self._get_install_steps()
 
@@ -68,18 +73,9 @@ class TestIntegration(unittest.TestCase):
             subprocess.call(shlex.split("python -c 'import webassets'")), 0
         )
 
-        return
-
-    def test_should_populate_repo(self):
+        #### test_should_populate_repo ####
         # Given
         script = self._get_yaml_content()['script']
-        install_steps = self._get_install_steps()
-        for command in install_steps:
-            subprocess.call(
-                shlex.split(command),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT
-            )
 
         # When
         output, error = subprocess.Popen(
@@ -93,20 +89,7 @@ class TestIntegration(unittest.TestCase):
         self.assertTrue(exists(join(self.repo_dir, 'conf.py')))
         self.assertTrue(exists(join(self.repo_dir, 'files', '.nojekyll')))
 
-        return
-
-    def test_should_build_repo(self):
-        # Given
-        script = self._get_yaml_content()['script']
-        install_steps = self._get_install_steps()
-        install_steps.append('fab -f travis_fabfile.py populate_source')
-        for command in install_steps:
-            subprocess.call(
-                shlex.split(command),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT
-            )
-
+        #### test_should_build_repo ####
         # When
         output, error = subprocess.Popen(
             shlex.split(script),
@@ -120,7 +103,6 @@ class TestIntegration(unittest.TestCase):
         self.assertTrue(exists(join(self.repo_dir, '.nojekyll')))
 
         return
-
 
     #### Private protocol #####################################################
 

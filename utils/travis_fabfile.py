@@ -44,6 +44,7 @@ def init_site():
 
     local('mv demo/* . && rmdir demo')
     local('touch files/.nojekyll')
+    local('rm *.pyc')
 
 
 def populate_source():

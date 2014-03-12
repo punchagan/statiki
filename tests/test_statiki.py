@@ -230,24 +230,23 @@ class TestStatiki(unittest.TestCase):
 
     def test_should_manage_this_repo(self):
         # Given
-        target = 'travis_utils.TravisUtils.get_repo_id'
+        data = {'full_name': 'punchagan/statiki'}
 
-        # When/Then
+        # When
         with self.logged_in('punchagan'):
-            with patch(target, Mock(return_value=1779263)):
-                response = self.app.post(
-                    '/manage', data={'full_name': 'punchagan/statiki'}
-                )
+            with patch('travis_utils.get_repo_id', Mock(return_value=1779263)):
+                response = self.app.post('/manage', data=data)
 
         # Then
         self.assertEqual(200, response.status_code)
 
     def test_should_handle_sync_failure(self):
-        # Given/When
+        # Given
+        data = {'full_name': 'punchagan/foo'}
+
+        # When
         with self.logged_in('punchagan'):
-            response = self.app.post(
-                '/manage', data={'full_name': 'punchagan/foo'}
-            )
+            response = self.app.post('/manage', data=data)
 
         # Then
         self.assertEqual(200, response.status_code)
@@ -286,20 +285,18 @@ class TestStatiki(unittest.TestCase):
     def logged_in(self, login='fred', travis_user=True):
         """ A context manager to do stuff, while logged in as fred. """
 
-        response           = Response()
-        response._content  = json.dumps(
+        response = Response()
+        response._content = json.dumps(
             dict(id=12345, login=login, name='Fred')
         )
-        data               = Mock()
-        data.get           = Mock(return_value=response)
-        data.access_token  = GH_TOKEN
+        data = Mock()
+        data.get = Mock(return_value=response)
+        data.access_token = GH_TOKEN
 
-        true               = Mock(return_value=True)
+        true = Mock(return_value=True)
 
         if travis_user:
-            travis_patch = patch(
-                'travis_utils.TravisUtils.is_travis_user', true
-            )
+            travis_patch = patch('travis_utils.is_travis_user', true)
             travis_patch.start()
 
         with patch('statiki.github', Mock(spec=OAuth2Service)) as gh:

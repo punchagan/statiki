@@ -24,7 +24,7 @@ from rauth.service import OAuth2Service
 # Local library.
 import messages
 from github_utils import GitHubUtils
-from travis_utils import TravisUtils
+import travis_utils
 
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 SCRIPT = 'travis_fabfile.py'
@@ -67,7 +67,7 @@ def travis_login_required(func):
 
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        travis_token = TravisUtils.is_travis_user(current_user.github_token)
+        travis_token = travis_utils.is_travis_user(current_user.github_token)
 
         if travis_token is None:
             return jsonify(dict(message=messages.NO_TRAVIS_ACCOUNT))
@@ -270,16 +270,16 @@ def manage():
     travis_token = current_user.travis_token
 
     # If repo not listed in travis, sync
-    repo_id = TravisUtils.get_repo_id(full_name, travis_token)
+    repo_id = travis_utils.get_repo_id(full_name, travis_token)
     if repo_id is None:
-        TravisUtils.sync_with_github(travis_token)
-        repo_id = TravisUtils.get_repo_id(full_name, travis_token)
+        travis_utils.sync_with_github(travis_token)
+        repo_id = travis_utils.get_repo_id(full_name, travis_token)
 
     if repo_id is None:
         message = messages.NO_SUCH_REPO_FOUND
         return jsonify(dict(message=message))
 
-    enabled = TravisUtils.enable_hook(repo_id, travis_token)
+    enabled = travis_utils.enable_hook(repo_id, travis_token)
     created = create_travis_files(full_name, github_token, data)
 
     response = get_display_response(enabled, created)
@@ -295,7 +295,7 @@ def show_status():
         'SITE': SITE,
         'DESCRIPTION': DESCRIPTION,
         'GITHUB_STATUS': GitHubUtils.get_status(),
-        'TRAVIS_STATUS': TravisUtils.get_status(),
+        'TRAVIS_STATUS': travis_utils.get_status(),
     }
 
     return render_template('status.html', **context)
@@ -369,14 +369,14 @@ def get_travis_files_content(full_name, github_token, config):
     travis_files = [
         {
             'name': SCRIPT,
-            'content': TravisUtils.get_script_contents(SCRIPT, config),
+            'content': travis_utils.get_script_contents(SCRIPT, config),
             'message': (
                 'Add build and deploy script (via Statiki).\n\n[skip ci]'
             ),
         },
         {
             'name': '.travis.yml',
-            'content': TravisUtils.get_yaml_contents(
+            'content': travis_utils.get_yaml_contents(
                 full_name, SCRIPT, info, user_pages
             ),
             'message': 'Add .travis.yml (via Statiki).',

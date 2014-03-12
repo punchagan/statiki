@@ -33,7 +33,7 @@ import shutil
 import requests
 
 # Local library
-from travis_utils import TravisUtils
+import travis_utils
 
 SCRIPT = './travis_fabfile.py'
 GIT_NAME = 'Statiki'
@@ -66,7 +66,7 @@ def create_travis_config(path, repo, gh_token):
         return
 
     info = dict(GIT_NAME=GIT_NAME, GIT_EMAIL=GIT_EMAIL, GH_TOKEN=gh_token)
-    content = TravisUtils.get_yaml_contents(repo, SCRIPT, info)
+    content = travis_utils.get_yaml_contents(repo, SCRIPT, info)
 
     with open(travis_yml, 'w') as f:
         f.write(content)
@@ -92,9 +92,9 @@ def create_script_file(path):
 def enable_ci_for_repo(repo, gh_token):
     """ Enable the travis hook for the given repo. """
 
-    access_token = TravisUtils.get_access_token(gh_token)
-    repo_id      = TravisUtils.get_repo_id(repo, access_token)
-    enabled = TravisUtils.enable_hook(repo_id, access_token)
+    access_token = travis_utils.get_access_token(gh_token)
+    repo_id      = travis_utils.get_repo_id(repo, access_token)
+    enabled = travis_utils.enable_hook(repo_id, access_token)
     if enabled:
         print('Enabled GitHub/Travis hook for %s' % repo)
 

@@ -8,7 +8,7 @@ import os
 from mock import Mock, patch
 import unittest
 
-from travis_utils import TravisUtils
+import travis_utils
 import yaml
 
 
@@ -25,7 +25,7 @@ THIS_REPO = 'punchagan/statiki'
 GH_TOKEN = get_gh_token(BOGUS)
 TRAVIS_TOKEN = (
     BOGUS if GH_TOKEN == BOGUS else
-    TravisUtils.get_access_token(GH_TOKEN)
+    travis_utils.get_access_token(GH_TOKEN)
 )
 
 
@@ -34,22 +34,22 @@ class TestTravisUtils(unittest.TestCase):
 
     def test_should_find_existing_hook(self):
         self.assertTrue(
-            TravisUtils.hook_exists(THIS_REPO, TRAVIS_TOKEN)
+            travis_utils.hook_exists(THIS_REPO, TRAVIS_TOKEN)
         )
 
     def test_should_not_find_bogus_hook(self):
         self.assertFalse(
-            TravisUtils.hook_exists(THIS_REPO+BOGUS, TRAVIS_TOKEN)
+            travis_utils.hook_exists(THIS_REPO+BOGUS, TRAVIS_TOKEN)
         )
 
     def test_should_not_find_hooks_unauthenticated(self):
         self.assertFalse(
-            TravisUtils.hook_exists(THIS_REPO+BOGUS, BOGUS)
+            travis_utils.hook_exists(THIS_REPO+BOGUS, BOGUS)
         )
 
     def test_should_get_public_key(self):
         # When
-        key = TravisUtils.get_public_key(THIS_REPO)
+        key = travis_utils.get_public_key(THIS_REPO)
 
         # Then
         self.assertIn('BEGIN PUBLIC KEY', key)
@@ -59,8 +59,8 @@ class TestTravisUtils(unittest.TestCase):
         token_mock = Mock(return_value=TRAVIS_TOKEN)
 
         # When
-        with patch('travis_utils.TravisUtils.get_access_token', token_mock):
-            token = TravisUtils.is_travis_user(GH_TOKEN)
+        with patch('travis_utils.get_access_token', token_mock):
+            token = travis_utils.is_travis_user(GH_TOKEN)
 
         # Then
         # Note: We don't check if token is equal to expected token,
@@ -69,7 +69,7 @@ class TestTravisUtils(unittest.TestCase):
         self.assertTrue(isinstance(token, basestring))
 
     def test_should_detect_bogus_user(self):
-        self.assertIsNone(TravisUtils.is_travis_user(BOGUS))
+        self.assertIsNone(travis_utils.is_travis_user(BOGUS))
 
     def test_should_get_repo_id(self):
         # Given
@@ -77,7 +77,7 @@ class TestTravisUtils(unittest.TestCase):
         repo_id   = 1779263
 
         # When
-        id = TravisUtils.get_repo_id(full_name, TRAVIS_TOKEN)
+        id = travis_utils.get_repo_id(full_name, TRAVIS_TOKEN)
 
         # Then
         self.assertEqual(id, repo_id)
@@ -87,17 +87,17 @@ class TestTravisUtils(unittest.TestCase):
         full_name = THIS_REPO + BOGUS
 
         # When
-        id = TravisUtils.get_repo_id(full_name, TRAVIS_TOKEN)
+        id = travis_utils.get_repo_id(full_name, TRAVIS_TOKEN)
 
         # Then
         self.assertIsNone(id)
 
     def test_should_enable_hook(self):
         # Given
-        repo_id = TravisUtils.get_repo_id(THIS_REPO, TRAVIS_TOKEN)
+        repo_id = travis_utils.get_repo_id(THIS_REPO, TRAVIS_TOKEN)
 
         # When
-        enabled = TravisUtils.enable_hook(repo_id, TRAVIS_TOKEN)
+        enabled = travis_utils.enable_hook(repo_id, TRAVIS_TOKEN)
 
         # Then
         self.assertTrue(enabled)
@@ -107,7 +107,7 @@ class TestTravisUtils(unittest.TestCase):
         data = 'this is super secret'
 
         # When/Then
-        TravisUtils.get_encrypted_text(THIS_REPO, data)
+        travis_utils.get_encrypted_text(THIS_REPO, data)
         # No idea what to test!  This test just checks for runtime errors.
 
     def test_should_get_script_contents(self):
@@ -115,7 +115,7 @@ class TestTravisUtils(unittest.TestCase):
         config = {'BLOG_TITLE': 'foo'}
 
         # When
-        content = TravisUtils.get_script_contents('travis_fabfile.py', config)
+        content = travis_utils.get_script_contents('travis_fabfile.py', config)
 
         # Then
         self.assertIn('BLOG_TITLE', content)
@@ -130,7 +130,7 @@ class TestTravisUtils(unittest.TestCase):
         script_name = 'fabfile.py'
 
         # When
-        contents = TravisUtils.get_yaml_contents(
+        contents = travis_utils.get_yaml_contents(
             THIS_REPO, script_name, git_user_info
         )
 
@@ -149,7 +149,7 @@ class TestTravisUtils(unittest.TestCase):
             'GIT_EMAIL': 'bogus@travis-ci.org'
         }
         script_name = 'bazooka.sh'
-        contents = TravisUtils.get_yaml_contents(
+        contents = travis_utils.get_yaml_contents(
             THIS_REPO, script_name, git_info, user_pages=True
         )
 
@@ -165,7 +165,7 @@ class TestTravisUtils(unittest.TestCase):
             'GIT_EMAIL': 'bogus@travis-ci.org'
         }
         script_name = 'bazooka.sh'
-        contents = TravisUtils.get_yaml_contents(
+        contents = travis_utils.get_yaml_contents(
             'punchagan/unknown', script_name, git_info, user_pages=True
         )
 
@@ -174,7 +174,7 @@ class TestTravisUtils(unittest.TestCase):
         self.assertIn('deploy', data['branches']['only'])
 
     def test_should_not_start_sync_unauthenticated(self):
-        self.assertFalse(TravisUtils.sync_with_github(BOGUS))
+        self.assertFalse(travis_utils.sync_with_github(BOGUS))
 
     def test_should_sync(self):
         # Given
@@ -183,9 +183,9 @@ class TestTravisUtils(unittest.TestCase):
         response = Mock(status_code=200, json=json)
 
         # When
-        with patch('travis_utils.TravisUtils.start_sync', true):
+        with patch('travis_utils.start_sync', true):
             with patch('requests.get', Mock(return_value=response)):
-                synced = TravisUtils.sync_with_github(TRAVIS_TOKEN)
+                synced = travis_utils.sync_with_github(TRAVIS_TOKEN)
 
         # Then
         self.assertTrue(synced)
@@ -197,15 +197,15 @@ class TestTravisUtils(unittest.TestCase):
         response = Mock(status_code=200, json=json)
 
         # When
-        with patch('travis_utils.TravisUtils.start_sync', true):
+        with patch('travis_utils.start_sync', true):
             with patch('requests.get', Mock(return_value=response)) as get:
                 with patch('time.sleep', Mock()):
-                    synced = TravisUtils.sync_with_github(TRAVIS_TOKEN)
+                    synced = travis_utils.sync_with_github(TRAVIS_TOKEN)
 
         # Then
         _, kwargs = get.call_args
         self.assertDictEqual(
-            kwargs['headers'], TravisUtils.get_header(TRAVIS_TOKEN)
+            kwargs['headers'], travis_utils.get_header(TRAVIS_TOKEN)
         )
         self.assertFalse(synced)
 
@@ -215,14 +215,14 @@ class TestTravisUtils(unittest.TestCase):
         response = Mock(status_code=404)
 
         # When
-        with patch('travis_utils.TravisUtils.start_sync', true):
+        with patch('travis_utils.start_sync', true):
             with patch('requests.get', Mock(return_value=response)):
-                synced = TravisUtils.sync_with_github(TRAVIS_TOKEN)
+                synced = travis_utils.sync_with_github(TRAVIS_TOKEN)
 
         # Then
         self.assertFalse(synced)
 
     def test_should_get_status(self):
         self.assertIn(
-            'all systems operational', TravisUtils.get_status().lower()
+            'all systems operational', travis_utils.get_status().lower()
         )

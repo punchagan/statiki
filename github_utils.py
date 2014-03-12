@@ -14,140 +14,136 @@ import re
 import requests
 
 
-class GitHubUtils(object):
-    """ A collection of helper functions for consuming the GitHUb API. """
+def is_user_pages(full_name):
+    """ Return True if the repository is a user pages repository. """
 
-    @staticmethod
-    def commit(path, content, repo, token, extra_payload=None):
-        """ Commit the given content to the given path in a repository. """
+    username, repo_name = full_name.split('/', 1)
 
-        branch = 'deploy' if GitHubUtils.is_user_pages(repo) else 'master'
-        headers = GitHubUtils.get_header(token)
-        payload = {
-            'path': path,
-            'message': 'Adding %s (from statiki).' % path,
-            'content': base64.standard_b64encode(content),
-            'branch': branch
-        }
+    return (
+        repo_name.startswith(username)
+        and repo_name.endswith(('github.io', 'github.com'))
+    )
 
-        if extra_payload is not None:
-            payload.update(extra_payload)
 
-        sha = GitHubUtils.exists(repo, path, token)
-        if sha is not None:
-            payload['sha'] = sha
+def is_valid_repository(full_name):
+    """ Return True if such a repo exists on GitHub. """
 
-        url = 'https://api.github.com/repos/%s/contents/%s' % (repo, path)
+    response = requests.get('https://github.com/%s' % full_name)
+    return response.status_code == 200
 
-        response = requests.put(
-            url, data=json.dumps(payload), headers=headers
-        )
 
-        return response.ok
+def get_user_and_repo(full_name, token):
+    """ Return the username, user_type, repo_name, given a repository.
 
-    @staticmethod
-    def create_new_repository(full_name, token):
-        """ Create a new repository given the name and a token.
+    user_type is one of User or Organization.
 
-        NOTE the token must have 'repo' scope, not just 'public_repo'.
+    """
 
-        """
+    user, name = full_name.split('/')
+    url = 'https://api.github.com/users/%s' % user
+    headers = get_header(token)
 
-        user, user_type, name = GitHubUtils.get_user_and_repo(
-            full_name, token
-        )
+    response = requests.get(url, headers=headers)
 
-        url = 'https://api.github.com/user/repos'
-        headers = GitHubUtils.get_header(token)
-        homepage = (
-            name if GitHubUtils.is_user_pages(full_name)
-            else 'http://%s.github.io/%s' % (user, name)
-        )
-        payload = {
-            'name': name,
-            'description': 'Website using Nikola, created from statiki',
-            'homepage': homepage,
-            'private': False,
-            'has_issues': False,
-            'has_wiki': False,
-            'has_downloads': False,
-        }
+    user_type = response.json()['type']
 
-        response = requests.post(
-            url, data=json.dumps(payload), headers=headers
-        )
+    return user, user_type, name
 
-        return response.status_code == 201
 
-    @staticmethod
-    def exists(full_name, path, token):
-        """ Return the sha of a path in a repo, if it exists; else None. """
+def get_status():
+    """ Return the server status of GitHub. """
 
-        headers = GitHubUtils.get_header(token)
+    response = requests.get('https://status.github.com')
+    pattern  = '(<div.*?id="message".*>(.|\s)*?</div>)'
 
-        url = 'repos/%s/contents/%s' % (full_name, path)
-        url = 'https://api.github.com/' + url
+    return re.findall(pattern, response.text)[0][0].strip()
 
-        response = requests.get(url, headers=headers)
 
-        if response.status_code == 200:
-            sha = json.loads(response.text)['sha']
+def get_header(token):
+    """ Return a header with authorization info, given the token. """
 
-        else:
-            sha = None
+    return {
+        'Authorization': 'token %s' % token,
+        'Content-Type': 'application/json'
+    }
 
-        return sha
 
-    @staticmethod
-    def get_header(token):
-        """ Return a header with authorization info, given the token. """
+def exists(full_name, path, token):
+    """ Return the sha of a path in a repo, if it exists; else None. """
 
-        return {
-            'Authorization': 'token %s' % token,
-            'Content-Type': 'application/json'
-        }
+    headers = get_header(token)
 
-    @staticmethod
-    def get_status():
-        """ Return the server status of GitHub. """
+    url = 'repos/%s/contents/%s' % (full_name, path)
+    url = 'https://api.github.com/' + url
 
-        response = requests.get('https://status.github.com')
-        pattern  = '(<div.*?id="message".*>(.|\s)*?</div>)'
+    response = requests.get(url, headers=headers)
 
-        return re.findall(pattern, response.text)[0][0].strip()
+    if response.status_code == 200:
+        sha = json.loads(response.text)['sha']
 
-    @staticmethod
-    def get_user_and_repo(full_name, token):
-        """ Return the username, user_type, repo_name, given a repository.
+    else:
+        sha = None
 
-        user_type is one of User or Organization.
+    return sha
 
-        """
 
-        user, name = full_name.split('/')
-        url = 'https://api.github.com/users/%s' % user
-        headers = GitHubUtils.get_header(token)
+def create_new_repository(full_name, token):
+    """ Create a new repository given the name and a token.
 
-        response = requests.get(url, headers=headers)
+    NOTE the token must have 'repo' scope, not just 'public_repo'.
 
-        user_type = response.json()['type']
+    """
 
-        return user, user_type, name
+    user, user_type, name = get_user_and_repo(
+        full_name, token
+    )
 
-    @staticmethod
-    def is_valid_repository(full_name):
-        """ Return True if such a repo exists on GitHub. """
+    url = 'https://api.github.com/user/repos'
+    headers = get_header(token)
+    homepage = (
+        name if is_user_pages(full_name)
+        else 'http://%s.github.io/%s' % (user, name)
+    )
+    payload = {
+        'name': name,
+        'description': 'Website using Nikola, created from statiki',
+        'homepage': homepage,
+        'private': False,
+        'has_issues': False,
+        'has_wiki': False,
+        'has_downloads': False,
+    }
 
-        response = requests.get('https://github.com/%s' % full_name)
-        return response.status_code == 200
+    response = requests.post(
+        url, data=json.dumps(payload), headers=headers
+    )
 
-    @staticmethod
-    def is_user_pages(full_name):
-        """ Return True if the repository is a user pages repository. """
+    return response.status_code == 201
 
-        username, repo_name = full_name.split('/', 1)
 
-        return (
-            repo_name.startswith(username)
-            and repo_name.endswith(('github.io', 'github.com'))
-        )
+def commit(path, content, repo, token, extra_payload=None):
+    """ Commit the given content to the given path in a repository. """
+
+    branch = 'deploy' if is_user_pages(repo) else 'master'
+    headers = get_header(token)
+    payload = {
+        'path': path,
+        'message': 'Adding %s (from statiki).' % path,
+        'content': base64.standard_b64encode(content),
+        'branch': branch
+    }
+
+    if extra_payload is not None:
+        payload.update(extra_payload)
+
+    sha = exists(repo, path, token)
+    if sha is not None:
+        payload['sha'] = sha
+
+    url = 'https://api.github.com/repos/%s/contents/%s' % (repo, path)
+
+    response = requests.put(
+        url, data=json.dumps(payload), headers=headers
+    )
+
+    return response.ok

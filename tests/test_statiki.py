@@ -47,7 +47,7 @@ class TestStatiki(unittest.TestCase):
         true = Mock(return_value=True)
 
         # When
-        with patch('github_utils.GitHubUtils.commit', true) as commit:
+        with patch('github_utils.commit', true) as commit:
             created = statiki.create_travis_files(THIS_REPO, GH_TOKEN, {})
 
         # Then
@@ -156,13 +156,12 @@ class TestStatiki(unittest.TestCase):
 
     def test_should_create_repo(self):
         # Given
-        target = 'github_utils.GitHubUtils.create_new_repository'
         content = [{'name': 'bazooka', 'content': 'bar', 'message': ''}]
         get_content = Mock(return_value=content)
 
         # When
         with self.logged_in('punchagan'):
-            with patch(target, Mock()) as create:
+            with patch('github_utils.create_new_repository', Mock()) as create:
                 with patch('statiki.get_travis_files_content', get_content):
                     response = self.app.post(
                         '/create_repo', data={'repo_name': 'foo'}
@@ -179,15 +178,13 @@ class TestStatiki(unittest.TestCase):
 
     def test_should_inform_create_repo_failure(self):
         # Given
-        target = 'github_utils.GitHubUtils.create_new_repository'
         create_repo = Mock(return_value=False)
+        data = {'repo_name': ''}
 
         # When
         with self.logged_in('bazooka'):
-            with patch(target, create_repo):
-                response = self.app.post(
-                    '/create_repo', data={'repo_name': ''}
-                )
+            with patch('github_utils.create_new_repository', create_repo):
+                response = self.app.post('/create_repo', data=data)
 
         # Then
         args, _ = create_repo.call_args
@@ -197,13 +194,14 @@ class TestStatiki(unittest.TestCase):
         self.assertEqual(messages.CREATE_REPO_FAILURE, data['message'])
 
     def test_should_prompt_statiki_files_overwrite(self):
-        # Given/When
+        # Given
+        data = {'repo_name': 'statiki'}
+
+        # When
         true = Mock(return_value=True)
         with self.logged_in('punchagan'):
-            with patch('github_utils.GitHubUtils.exists', true):
-                response = self.app.post(
-                    '/create_repo', data={'repo_name': 'statiki'}
-                )
+            with patch('github_utils.exists', true):
+                response = self.app.post('/create_repo', data=data)
 
         # Then
         data = json.loads(response.data)
@@ -213,13 +211,14 @@ class TestStatiki(unittest.TestCase):
         self.assertEqual(messages.OVERWRITE_YAML, data['message'])
 
     def test_should_manage_repo_with_no_statiki_files(self):
-        # Given/When
+        # Given
+        data = {'repo_name': 'statiki'}
+
+        # When
         false = Mock(return_value=False)
         with self.logged_in('punchagan'):
-            with patch('github_utils.GitHubUtils.exists', false):
-                response = self.app.post(
-                    '/create_repo', data={'repo_name': 'statiki'}
-                )
+            with patch('github_utils.exists', false):
+                response = self.app.post('/create_repo', data=data)
 
         # Then
         data = json.loads(response.data)

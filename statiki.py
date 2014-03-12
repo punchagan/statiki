@@ -23,7 +23,7 @@ from rauth.service import OAuth2Service
 
 # Local library.
 import messages
-from github_utils import GitHubUtils
+import github_utils
 import travis_utils
 
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
@@ -204,14 +204,14 @@ def create_repo():
     created = exists = overwrite = False
 
     # If repo does not exist, create it.
-    if not GitHubUtils.is_valid_repository(full_name):
-        if GitHubUtils.create_new_repository(full_name, github_token):
+    if not github_utils.is_valid_repository(full_name):
+        if github_utils.create_new_repository(full_name, github_token):
             created = True
             message = messages.CREATE_REPO_SUCCESS
         else:
             message = messages.CREATE_REPO_FAILURE
 
-    elif GitHubUtils.exists(full_name, '.travis.yml', github_token):
+    elif github_utils.exists(full_name, '.travis.yml', github_token):
         exists = True
         overwrite = True
         message = messages.OVERWRITE_YAML
@@ -262,7 +262,7 @@ def manage():
     data = dict(parse_qsl(request.form.get('data', '')))
 
     repo_name = (
-        '' if GitHubUtils.is_user_pages(full_name)
+        '' if github_utils.is_user_pages(full_name)
         else full_name.split('/', 1)[-1]
     )
 
@@ -294,7 +294,7 @@ def show_status():
         'user': current_user,
         'SITE': SITE,
         'DESCRIPTION': DESCRIPTION,
-        'GITHUB_STATUS': GitHubUtils.get_status(),
+        'GITHUB_STATUS': github_utils.get_status(),
         'TRAVIS_STATUS': travis_utils.get_status(),
     }
 
@@ -325,7 +325,7 @@ def create_travis_files(full_name, github_token, config):
             'message': file_['message']
         }
 
-        created[name] = GitHubUtils.commit(
+        created[name] = github_utils.commit(
             name, content, full_name, github_token, extra_payload
         )
 
@@ -364,7 +364,7 @@ def get_travis_files_content(full_name, github_token, config):
         'GH_TOKEN': github_token
     }
 
-    user_pages   = GitHubUtils.is_user_pages(full_name)
+    user_pages   = github_utils.is_user_pages(full_name)
 
     travis_files = [
         {
